@@ -64,7 +64,7 @@ class StopWatch
     end_time_ = Clock_t::now();
   }
 
-  size_t
+  constexpr size_t
   GetNanoDuration() const
   {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end_time_ - start_time_).count();
