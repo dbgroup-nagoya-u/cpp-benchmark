@@ -36,7 +36,7 @@ target_compile_options(
 )
 target_include_directories(
   cpp_bench INTERFACE
-  "${CPP_BENCH_SOURCE_DIR}"
+  "${CPP_BENCH_SOURCE_DIR}/include"
   "${CPP_UTILITY_SOURCE_DIR}/include"
 )
 target_link_libraries(
