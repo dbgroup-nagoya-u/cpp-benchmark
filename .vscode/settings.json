@@ -26,7 +26,8 @@
     "-build/c++11",
     "-whitespace/newline",
     "-runtime/references",
-    "-build/include_subdir"
+    "-build/include_subdir",
+    "-build/header_guard"
   ],
   "cSpell.words": [
     "alignas",
