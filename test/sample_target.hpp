@@ -27,20 +27,9 @@ template <class Implementation>
 class SampleTarget
 {
  public:
-  constexpr SampleTarget() : sum_{}, mtx_{} {}
+  constexpr SampleTarget() : sum_{0}, mtx_{} {}
 
   ~SampleTarget() = default;
-
-  void
-  SetUp()
-  {
-    sum_ = 0;
-  }
-
-  void
-  TearDown()
-  {
-  }
 
   void Execute(const SampleOperation ops);
 

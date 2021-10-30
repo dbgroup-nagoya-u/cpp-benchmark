@@ -45,7 +45,6 @@ class WorkerFixture : public ::testing::Test
   SetUp() override
   {
     SampleOperationEngine ops_engine{};
-    target_.SetUp();
 
     worker_ = std::make_unique<Worker_t>(target_, ops_engine.Generate(kExecNum, kRandomSeed));
   }
@@ -53,7 +52,6 @@ class WorkerFixture : public ::testing::Test
   void
   TearDown() override
   {
-    target_.TearDown();
   }
 
   /*################################################################################################
@@ -129,12 +127,12 @@ TYPED_TEST_CASE(WorkerFixture, Implementations);
  * Unit test definitions
  *################################################################################################*/
 
-TYPED_TEST(WorkerFixture, MeasureThroughput_SwapSameFields_MeasureReasonableExecutionTime)
+TYPED_TEST(WorkerFixture, MeasureThroughput_UseSampleIncrementor_MeasureReasonableExecutionTime)
 {
   TestFixture::VerifyMeasureThroughput();
 }
 
-TYPED_TEST(WorkerFixture, MeasureLatency_SwapSameFields_MeasureReasonableLatency)
+TYPED_TEST(WorkerFixture, MeasureLatency_UseSampleIncrementor_MeasureReasonableLatency)
 {
   TestFixture::VerifyMeasureLatency();
 }
