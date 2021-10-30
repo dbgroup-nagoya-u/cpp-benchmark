@@ -15,7 +15,6 @@ project(
 
 # define source directories
 set(CPP_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(CPP_UTILITY_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
 
 #--------------------------------------------------------------------------------------#
 # Build library
@@ -37,7 +36,6 @@ target_compile_options(
 target_include_directories(
   cpp_bench INTERFACE
   "${CPP_BENCH_SOURCE_DIR}/include"
-  "${CPP_UTILITY_SOURCE_DIR}/include"
 )
 target_link_libraries(
   cpp_bench INTERFACE
