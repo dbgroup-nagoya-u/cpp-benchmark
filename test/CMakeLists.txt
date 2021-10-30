@@ -54,6 +54,13 @@ function(ADD_CPP_BENCH_TEST CPP_BENCH_TEST_TARGET)
     gtest_main
   )
   add_test(NAME ${CPP_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${CPP_BENCH_TEST_TARGET}>)
+
+  if(DEFINED CPP_BENCH_TEST_THREAD_NUM)
+    target_compile_definitions(
+      ${CPP_BENCH_TEST_TARGET} PRIVATE
+      CPP_BENCH_TEST_THREAD_NUM=${CPP_BENCH_TEST_THREAD_NUM}
+    )
+  endif()
 endfunction()
 
 # add unit tests to build targets

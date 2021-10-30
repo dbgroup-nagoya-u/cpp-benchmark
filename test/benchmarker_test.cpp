@@ -78,7 +78,7 @@ class BenchmarkerFixture : public ::testing::Test
    * Internal constants
    *##############################################################################################*/
 
-  static constexpr size_t kExecNum = 1e3;
+  static constexpr size_t kExecNum = 1e6;
   static constexpr size_t kRandomSeed = 0;
 
   /*################################################################################################
@@ -111,6 +111,16 @@ TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithSingleWorker_RunWithoutE
 TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithSingleWorker_RunWithoutError)
 {
   TestFixture::VerifyMeasureLatency(1);
+}
+
+TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithMultiWorkers_RunWithoutError)
+{
+  TestFixture::VerifyMeasureThroughput(kThreadNum);
+}
+
+TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithMultiWorkers_RunWithoutError)
+{
+  TestFixture::VerifyMeasureLatency(kThreadNum);
 }
 
 }  // namespace dbgroup::benchmark::test

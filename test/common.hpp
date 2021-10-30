@@ -21,4 +21,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#ifdef CPP_BENCH_TEST_THREAD_NUM
+static constexpr size_t kThreadNum = CPP_BENCH_TEST_THREAD_NUM;
+#else
+static constexpr size_t kThreadNum = 8;
+#endif
+
 #endif  // CPP_BENCHMAKER_TEST_COMMON_H_
