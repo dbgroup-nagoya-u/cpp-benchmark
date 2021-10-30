@@ -216,8 +216,7 @@ class Benchmarker
 
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd_);
-      const auto operations = ops_engine_.Generate(exec_num, random_seed);
-      worker = new Worker_t{bench_target_, std::move(operations)};
+      worker = new Worker_t{bench_target_, ops_engine_.Generate(exec_num, random_seed)};
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
