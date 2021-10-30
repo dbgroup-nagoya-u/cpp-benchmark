@@ -35,6 +35,7 @@
     "ctest",
     "DBUILD",
     "DCMAKE",
+    "DCPP",
     "DMWCAS",
     "gflags",
     "GLOG",
