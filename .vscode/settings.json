@@ -26,7 +26,8 @@
     "-build/c++11",
     "-whitespace/newline",
     "-runtime/references",
-    "-build/include_subdir"
+    "-build/include_subdir",
+    "-build/header_guard"
   ],
   "cSpell.words": [
     "alignas",
@@ -34,6 +35,7 @@
     "ctest",
     "DBUILD",
     "DCMAKE",
+    "DCPP",
     "DMWCAS",
     "gflags",
     "GLOG",
@@ -41,16 +43,8 @@
     "JPNP",
     "KAKENHI",
     "libgflags",
-    "libnuma",
     "mutex",
-    "mwcas",
-    "numactl",
-    "NUMS",
-    "PMEM",
-    "PMWCAS",
     "pthread",
-    "stoi",
-    "stoul",
     "Wextra",
     "zipf"
   ],

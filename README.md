@@ -1,50 +1,32 @@
-# MwCAS Benchmark
+# C++ Benchmarker
 
-![Unit Tests](https://github.com/dbgroup-nagoya-u/mwcas-benchmark/workflows/Unit%20Tests/badge.svg?branch=main)
-
-## Tested Environment
-
-| Item | Value |
-| --- | --- |
-| OS | Ubuntu 20.04.2 LTS |
-| g++ | ver. 9.3.0 |
-| cmake | ver. 3.16.3 |
+![Unit Tests](https://github.com/dbgroup-nagoya-u/cpp-benchmark/workflows/Unit%20Tests/badge.svg?branch=main)
 
 ## Build
 
+Note: this is a header only library. You can use this without pre-build.
+
 ### Prerequisites
 
-Note: `libnuma-dev` is required to build Microsoft's PMwCAS.
-
 ```bash
-sudo apt update && sudo apt install -y build-essential cmake libnuma-dev
+sudo apt update && sudo apt install -y build-essential cmake
 cd <path_to_your_workspace>
-git clone --recursive git@github.com:dbgroup-nagoya-u/mwcas-benchmark.git
+git clone --recursive git@github.com:dbgroup-nagoya-u/cpp-benchmark.git
 ```
 
 ### Build Options
 
-- `MWCAS_BENCH_MAX_TARGET_NUM`: the maximum number of target words of MwCAS (default: `8`).
-- `MWCAS_BENCH_BUILD_TESTS`: build unit tests for this repository if `ON` (default: `OFF`).
+- `CPP_BENCH_BUILD_TESTS`: build unit tests for this repository if `ON` (default: `OFF`).
+- `CPP_BENCH_TEST_THREAD_NUM`: the maximum number of threads to perform unit tests (default `8`).
 
 ### Build and Run Unit Tests
 
 ```bash
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DMWCAS_BENCH_BUILD_TESTS=ON ..
+cmake -DCMAKE_BUILD_TYPE=Release -DCPP_BENCH_BUILD_TESTS=ON ..
 make -j
 ctest -C Release
 ```
-
-## Usage
-
-The following command displays available CLI options:
-
-```bash
-./build/mwcas_bench --helpshort
-```
-
-We prepare scripts in `bin` directory to measure performance with a variety of parameters. You can set parameters for benchmarking by `config/bench.env`.
 
 ## Acknowledgments
 

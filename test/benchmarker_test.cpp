@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-#include "component/worker.hpp"
+#include "benchmarker.hpp"
 
 #include <memory>
 
 #include "component/stopwatch.hpp"
+#include "component/worker.hpp"
 #include "gtest/gtest.h"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
 
-namespace dbgroup::benchmark::component::test
+namespace dbgroup::benchmark::test
 {
 template <class Implementation>
-class WorkerFixture : public ::testing::Test
+class BenchmarkerFixture : public ::testing::Test
 {
   /*################################################################################################
    * Type aliases
    *##############################################################################################*/
 
   using Target_t = SampleTarget<Implementation>;
-  using Worker_t = Worker<Target_t, SampleOperation>;
+  using Worker_t = component::Worker<Target_t, SampleOperation>;
+  using Benchmarker_t = Benchmarker<Target_t, SampleOperation, SampleOperationEngine>;
 
  protected:
   /*################################################################################################
@@ -44,9 +46,6 @@ class WorkerFixture : public ::testing::Test
   void
   SetUp() override
   {
-    SampleOperationEngine ops_engine{};
-
-    worker_ = std::make_unique<Worker_t>(target_, ops_engine.Generate(kExecNum, kRandomSeed));
   }
 
   void
@@ -59,41 +58,19 @@ class WorkerFixture : public ::testing::Test
    *##############################################################################################*/
 
   void
-  VerifyMeasureThroughput()
+  VerifyMeasureThroughput(const size_t thread_num)
   {
-    stopwatch_.Start();
-    worker_->MeasureThroughput();
-    stopwatch_.Stop();
-
-    // check the total execution time is reasonable
-    const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
-    EXPECT_GE(worker_->GetTotalExecTime(), 0);
-    EXPECT_LE(worker_->GetTotalExecTime(), wrapperred_exec_time);
-
-    // check the worker performs all the operations
-    EXPECT_EQ(kExecNum, target_.GetSum());
+    benchmarker_ = std::make_unique<Benchmarker_t>(kExecNum, thread_num, kRandomSeed, target_,
+                                                   ops_engine_, true, false);
+    benchmarker_->Run();
   }
 
   void
-  VerifyMeasureLatency()
+  VerifyMeasureLatency(const size_t thread_num)
   {
-    stopwatch_.Start();
-    worker_->MeasureLatency();
-    stopwatch_.Stop();
-
-    // check random sampling is performed
-    const auto latencies = worker_->GetLatencies(kSampleNum);
-    EXPECT_EQ(kSampleNum, latencies.size());
-
-    // check each latency is reasonable
-    const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
-    for (auto &&latency : latencies) {
-      EXPECT_GE(latency, 0);
-      EXPECT_LE(latency, wrapperred_exec_time);
-    }
-
-    // check the worker performs all the operations
-    EXPECT_EQ(kExecNum, target_.GetSum());
+    benchmarker_ = std::make_unique<Benchmarker_t>(kExecNum, thread_num, kRandomSeed, target_,
+                                                   ops_engine_, false, false);
+    benchmarker_->Run();
   }
 
  private:
@@ -101,8 +78,7 @@ class WorkerFixture : public ::testing::Test
    * Internal constants
    *##############################################################################################*/
 
-  static constexpr size_t kExecNum = 1e3;
-  static constexpr double kSampleNum = 1e2;
+  static constexpr size_t kExecNum = 1e6;
   static constexpr size_t kRandomSeed = 0;
 
   /*################################################################################################
@@ -111,9 +87,9 @@ class WorkerFixture : public ::testing::Test
 
   Target_t target_{};
 
-  std::unique_ptr<Worker_t> worker_{};
+  SampleOperationEngine ops_engine_{};
 
-  StopWatch stopwatch_{};
+  std::unique_ptr<Benchmarker_t> benchmarker_{};
 };
 
 /*##################################################################################################
@@ -121,20 +97,30 @@ class WorkerFixture : public ::testing::Test
  *################################################################################################*/
 
 using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
-TYPED_TEST_CASE(WorkerFixture, Implementations);
+TYPED_TEST_CASE(BenchmarkerFixture, Implementations);
 
 /*##################################################################################################
  * Unit test definitions
  *################################################################################################*/
 
-TYPED_TEST(WorkerFixture, MeasureThroughput_UseSampleIncrementor_MeasureReasonableExecutionTime)
+TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithSingleWorker_RunWithoutError)
 {
-  TestFixture::VerifyMeasureThroughput();
+  TestFixture::VerifyMeasureThroughput(1);
 }
 
-TYPED_TEST(WorkerFixture, MeasureLatency_UseSampleIncrementor_MeasureReasonableLatency)
+TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithSingleWorker_RunWithoutError)
 {
-  TestFixture::VerifyMeasureLatency();
+  TestFixture::VerifyMeasureLatency(1);
 }
 
-}  // namespace dbgroup::benchmark::component::test
+TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithMultiWorkers_RunWithoutError)
+{
+  TestFixture::VerifyMeasureThroughput(kThreadNum);
+}
+
+TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithMultiWorkers_RunWithoutError)
+{
+  TestFixture::VerifyMeasureLatency(kThreadNum);
+}
+
+}  // namespace dbgroup::benchmark::test
