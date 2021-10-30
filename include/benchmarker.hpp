@@ -36,9 +36,11 @@
 namespace dbgroup::benchmark
 {
 /**
- * @brief A class to run MwCAS benchmark.
+ * @brief A class to run benchmark.
  *
- * @tparam Target An implementation of MwCAS algorithms.
+ * @tparam Target An actual target implementation.
+ * @tparam Operation A struct to perform each operation.
+ * @tparam OperationEngine A class to generate operations.
  */
 template <class Target, class Operation, class OperationEngine>
 class Benchmarker
@@ -56,16 +58,15 @@ class Benchmarker
    *##############################################################################################*/
 
   /**
-   * @brief Construct a new Mw C A S Bench object.
+   * @brief Construct a new Benchmarker object.
    *
-   * @param total_field_num the total number of target fields.
-   * @param target_num the number of MwCAS targets for each operation.
-   * @param exec_num the total number of MwCAS operations for benchmarking.
-   * @param thread_num the number of execution threads.
-   * @param skew_parameter a skew parameter (based on Zipf's law).
-   * @param init_thread_num the number of worker threads for initialization.
+   * @param exec_num the total number of executions for benchmarking.
+   * @param thread_num the number of worker threads.
    * @param random_seed a base random seed.
+   * @param bench_target a reference to an actual target implementation.
+   * @param ops_engine a reference to a operation generator.
    * @param measure_throughput a flag to measure throughput (if true) or latency (if false).
+   * @param output_as_csv a flag to output benchmarking results as CSV or TEXT.
    */
   Benchmarker(  //
       const size_t exec_num,
@@ -149,7 +150,7 @@ class Benchmarker
     }  // unlock to run workers
 
     /*----------------------------------------------------------------------------------------------
-     * Output benchmark results
+     * Output benchmarkings results
      *--------------------------------------------------------------------------------------------*/
     Log("...Finish running.");
 
@@ -184,11 +185,10 @@ class Benchmarker
    *##############################################################################################*/
 
   /**
-   * @brief Run a worker thread to measure throuput and latency.
+   * @brief Run a worker thread to measure throughput or latency.
    *
-   * @param p a promise of a worker pointer that holds benchmark results.
-   * @param exec_num the number of operations to be executed by this worker.
-   * @param sample_num the number of samples to calculate percentile latency.
+   * @param p a promise of a worker pointer that holds benchmarking results.
+   * @param exec_num the number of executions for this worker.
    * @param random_seed a random seed.
    */
   void
@@ -302,10 +302,10 @@ class Benchmarker
    * Internal member variables
    *##############################################################################################*/
 
-  /// the total number of MwCAS operations for benchmarking
+  /// the total number of executions for benchmarking
   const size_t total_exec_num_;
 
-  /// the number of execution threads
+  /// the number of worker threads
   const size_t thread_num_;
 
   /// the total number of sampled execution time for computing percentiled latency

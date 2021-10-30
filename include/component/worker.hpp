@@ -29,7 +29,11 @@ namespace dbgroup::benchmark::component
 /**
  * @brief A class of a worker thread for benchmarking.
  *
- * @tparam Target An implementation of MwCAS algorithms.
+ * This class acts as a utility wrapper for benchmarking. Actual processin is performed
+ * by the Target class.
+ *
+ * @tparam Target An actual target implementation.
+ * @tparam Operation A struct to perform each operation.
  */
 template <class Target, class Operation>
 class Worker
@@ -42,8 +46,8 @@ class Worker
   /**
    * @brief Construct a new Worker object.
    *
-   * @param target
-   * @param operations
+   * @param target a referene to a target implementation.
+   * @param operations operation data to be performed by this worker.
    */
   Worker(  //
       Target &target,
@@ -54,7 +58,6 @@ class Worker
         latencies_nano_{},
         stopwatch_{}
   {
-    // reserve capacity of dynamic arrays
     latencies_nano_.reserve(operations_.size());
   }
 
@@ -114,7 +117,13 @@ class Worker
   }
 
   /**
-   * @return latencies.
+   * @brief Get the measured latencies.
+   *
+   * Note that this function performs random sampling to reduce the cost of computing
+   * percentiled latency.
+   *
+   * @param sample_num the number of desired samples.
+   * @return std::vector<size_t>: sampled latencies.
    */
   const std::vector<size_t>
   GetLatencies(const size_t sample_num) const
@@ -146,9 +155,10 @@ class Worker
    * Internal member variables
    *##############################################################################################*/
 
+  /// a benchmark target
   Target &target_;
 
-  /// MwCAS target filed addresses for each operation
+  /// operation data to be executed by this worker
   const std::vector<Operation> operations_;
 
   /// total execution time [ns]
@@ -157,6 +167,7 @@ class Worker
   /// execution time for each operation [ns]
   std::vector<size_t> latencies_nano_;
 
+  /// a stopwatch to measure execution time
   StopWatch stopwatch_;
 };
 

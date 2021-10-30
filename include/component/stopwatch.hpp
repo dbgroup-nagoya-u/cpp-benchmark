@@ -22,6 +22,10 @@
 
 namespace dbgroup::benchmark::component
 {
+/**
+ * @brief A class to measure time duration.
+ *
+ */
 class StopWatch
 {
   /*################################################################################################
@@ -35,6 +39,10 @@ class StopWatch
    * Public constructors and assignment operators
    *##############################################################################################*/
 
+  /**
+   * @brief Create a new StopWatch object.
+   *
+   */
   constexpr StopWatch() : start_time_{}, end_time_{} {}
 
   constexpr StopWatch(const StopWatch &) = default;
@@ -46,24 +54,44 @@ class StopWatch
    * Public destructors
    *##############################################################################################*/
 
+  /**
+   * @brief Destroy the StopWatch object.
+   *
+   */
   ~StopWatch() = default;
 
   /*################################################################################################
    * Public functions
    *##############################################################################################*/
 
+  /**
+   * @brief Start this stopwatch to measure time duration.
+   *
+   */
   void
   Start()
   {
     start_time_ = Clock_t::now();
   }
 
+  /**
+   * @brief Stop this stopwatch.
+   *
+   */
   void
   Stop()
   {
     end_time_ = Clock_t::now();
   }
 
+  /**
+   * @brief Get a measured time duration.
+   *
+   * If Start and Stop functions are not called previously, the return value is
+   * undefined.
+   *
+   * @return size_t: a measured time duration [ns].
+   */
   constexpr size_t
   GetNanoDuration() const
   {
@@ -75,8 +103,10 @@ class StopWatch
    * Internal member variables
    *##############################################################################################*/
 
+  /// a starting timestamp
   Clock_t::time_point start_time_;
 
+  /// an end timestamp
   Clock_t::time_point end_time_;
 };
 
