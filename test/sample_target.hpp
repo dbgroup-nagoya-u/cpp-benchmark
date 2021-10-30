@@ -44,6 +44,12 @@ class SampleTarget
 
   void Execute(const SampleOperation ops);
 
+  size_t
+  GetSum() const
+  {
+    return sum_;
+  }
+
  private:
   /// target data
   size_t sum_;
@@ -52,18 +58,20 @@ class SampleTarget
   std::mutex mtx_;
 };
 
+template <>
 inline void
 SampleTarget<std::mutex>::Execute(const SampleOperation ops)
 {
   const std::unique_lock<std::mutex> guard{mtx_};
 
-  ++sum_;
+  sum_ += ops.val;
 }
 
+template <>
 inline void
 SampleTarget<std::atomic_size_t>::Execute(const SampleOperation ops)
 {
-  reinterpret_cast<std::atomic_size_t*>(&sum_)->fetch_add(1);
+  reinterpret_cast<std::atomic_size_t*>(&sum_)->fetch_add(ops.val);
 }
 
 #endif  // CPP_BENCHMAKER_TEST_SAMPLE_TARGET_H_

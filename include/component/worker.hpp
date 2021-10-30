@@ -17,6 +17,7 @@
 #pragma once
 
 #include <algorithm>
+#include <random>
 #include <utility>
 #include <vector>
 
@@ -30,15 +31,9 @@ namespace dbgroup::benchmark::component
  *
  * @tparam Target An implementation of MwCAS algorithms.
  */
-template <template <class Implementatoin> class Target, class Operation>
+template <class Target, class Operation>
 class Worker
 {
-  /*################################################################################################
-   * Type aliases
-   *##############################################################################################*/
-
-  using Target_t = Target<Implementation>;
-
  public:
   /*################################################################################################
    * Public constructors/destructors
@@ -51,7 +46,7 @@ class Worker
    * @param operations
    */
   Worker(  //
-      Target_t &target,
+      Target &target,
       std::vector<Operation> &&operations)
       : target_{target},
         operations_{operations},
@@ -119,36 +114,22 @@ class Worker
   }
 
   /**
-   * @brief Sort execution time to compute percentiled latency.
-   *
-   * @param sample_num the number of samples to reduce computation cost.
-   */
-  void
-  SortLatencies(const size_t sample_num)
-  {
-    std::vector<size_t> sampled_latencies;
-    sampled_latencies.reserve(sample_num);
-
-    // perform random sampling to reduce sorting targets
-    std::uniform_int_distribution<size_t> id_generator{0, latencies_nano_.size() - 1};
-    std::mt19937_64 rand_engine{std::random_device{}()};
-    for (size_t i = 0; i < sample_num; ++i) {
-      const auto sample_idx = id_generator(rand_engine);
-      sampled_latencies.emplace_back(latencies_nano_[sample_idx]);
-    }
-
-    // sort sampled execution times
-    std::sort(sampled_latencies.begin(), sampled_latencies.end());
-    latencies_nano_ = std::move(sampled_latencies);
-  }
-
-  /**
    * @return latencies.
    */
-  const std::vector<size_t> &
-  GetLatencies() const
+  const std::vector<size_t>
+  GetLatencies(const size_t sample_num) const
   {
-    return latencies_nano_;
+    std::uniform_int_distribution<size_t> id_engine{0, latencies_nano_.size() - 1};
+    std::mt19937_64 rand_engine{std::random_device{}()};
+
+    // perform random sampling
+    std::vector<size_t> sampled_latencies;
+    sampled_latencies.reserve(sample_num);
+    for (size_t i = 0; i < sample_num; ++i) {
+      sampled_latencies.emplace_back(latencies_nano_[id_engine(rand_engine)]);
+    }
+
+    return sampled_latencies;
   }
 
   /**
@@ -165,7 +146,7 @@ class Worker
    * Internal member variables
    *##############################################################################################*/
 
-  Target_t &target_;
+  Target &target_;
 
   /// MwCAS target filed addresses for each operation
   std::vector<Operation> operations_;

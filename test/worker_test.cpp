@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-#include "worker.hpp"
+#include "component/worker.hpp"
 
+#include <memory>
+
+#include "component/stopwatch.hpp"
 #include "gtest/gtest.h"
-#include "pmwcas.h"
+#include "sample_operation.hpp"
+#include "sample_operation_engine.hpp"
+#include "sample_target.hpp"
 
-template <class MwCASImplementation>
+namespace dbgroup::benchmark::component::test
+{
+template <class Implementation>
 class WorkerFixture : public ::testing::Test
 {
   /*################################################################################################
    * Type aliases
    *##############################################################################################*/
 
-  using ZipfGenerator = ::dbgroup::random::zipf::ZipfGenerator;
-  using Worker_t = Worker<MwCASImplementation>;
+  using Target_t = SampleTarget<Implementation>;
+  using Worker_t = Worker<Target_t, SampleOperation>;
 
  protected:
   /*################################################################################################
@@ -37,31 +44,16 @@ class WorkerFixture : public ::testing::Test
   void
   SetUp() override
   {
-    if constexpr (std::is_same_v<MwCASImplementation, PMwCAS>) {
-      // prepare PMwCAS descriptor pool
-      pmwcas::InitLibrary(pmwcas::DefaultAllocator::Create, pmwcas::DefaultAllocator::Destroy,
-                          pmwcas::LinuxEnvironment::Create, pmwcas::LinuxEnvironment::Destroy);
-      pmwcas_desc_pool =
-          std::make_unique<PMwCAS>(static_cast<uint32_t>(8192 * 1), static_cast<uint32_t>(1));
-    }
+    SampleOperationEngine ops_engine{};
+    target_.SetUp();
 
-    target_fields.reserve(kMaxTargetNum);
-    for (size_t i = 0; i < kMaxTargetNum; ++i) {
-      target_fields.emplace_back(new uint64_t{0});
-    }
-
-    zipf_engine = ZipfGenerator{kMaxTargetNum, kSkewParameter};
-
-    worker = std::make_unique<Worker_t>(target_fields, kMaxTargetNum, kExecNum, zipf_engine,
-                                        kRandomSeed);
+    worker_ = std::make_unique<Worker_t>(target_, ops_engine.Generate(kExecNum, kRandomSeed));
   }
 
   void
   TearDown() override
   {
-    for (auto &&addr : target_fields) {
-      delete addr;
-    }
+    target_.TearDown();
   }
 
   /*################################################################################################
@@ -71,33 +63,39 @@ class WorkerFixture : public ::testing::Test
   void
   VerifyMeasureThroughput()
   {
-    const auto start_time = Clock::now();
-    worker->MeasureThroughput();
-    const auto end_time = Clock::now();
-    const auto total_time = GetNanoDuration(start_time, end_time);
+    stopwatch_.Start();
+    worker_->MeasureThroughput();
+    stopwatch_.Stop();
 
-    EXPECT_GE(worker->GetTotalExecTime(), 0);
-    EXPECT_LE(worker->GetTotalExecTime(), total_time);
+    // check the total execution time is reasonable
+    const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
+    EXPECT_GE(worker_->GetTotalExecTime(), 0);
+    EXPECT_LE(worker_->GetTotalExecTime(), wrapperred_exec_time);
+
+    // check the worker performs all the operations
+    EXPECT_EQ(kExecNum, target_.GetSum());
   }
 
   void
   VerifyMeasureLatency()
   {
-    const auto start_time = Clock::now();
-    worker->MeasureLatency();
-    const auto end_time = Clock::now();
-    const auto total_time = GetNanoDuration(start_time, end_time);
+    stopwatch_.Start();
+    worker_->MeasureLatency();
+    stopwatch_.Stop();
 
-    worker->SortLatencies(kExecNum);
-    const auto latencies = worker->GetLatencies();
+    // check random sampling is performed
+    const auto latencies = worker_->GetLatencies(kSampleNum);
+    EXPECT_EQ(kSampleNum, latencies.size());
 
-    // check whether latencies are sorted
-    size_t prev_latency = 0;
+    // check each latency is reasonable
+    const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
     for (auto &&latency : latencies) {
-      EXPECT_LE(prev_latency, latency);
-      prev_latency = latency;
+      EXPECT_GE(latency, 0);
+      EXPECT_LE(latency, wrapperred_exec_time);
     }
-    EXPECT_LE(latencies.back(), total_time);
+
+    // check the worker performs all the operations
+    EXPECT_EQ(kExecNum, target_.GetSum());
   }
 
  private:
@@ -106,24 +104,26 @@ class WorkerFixture : public ::testing::Test
    *##############################################################################################*/
 
   static constexpr size_t kExecNum = 1e3;
-  static constexpr double kSkewParameter = 0;
+  static constexpr double kSampleNum = 1e2;
   static constexpr size_t kRandomSeed = 0;
 
   /*################################################################################################
    * Internal member variables
    *##############################################################################################*/
 
-  std::vector<uint64_t *> target_fields;
-  ZipfGenerator zipf_engine;
-  std::unique_ptr<Worker_t> worker;
+  Target_t target_{};
+
+  std::unique_ptr<Worker_t> worker_{};
+
+  StopWatch stopwatch_{};
 };
 
 /*##################################################################################################
  * Preparation for typed testing
  *################################################################################################*/
 
-using MwCASImplementations = ::testing::Types<MwCAS, PMwCAS, SingleCAS>;
-TYPED_TEST_CASE(WorkerFixture, MwCASImplementations);
+using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
+TYPED_TEST_CASE(WorkerFixture, Implementations);
 
 /*##################################################################################################
  * Unit test definitions
@@ -138,3 +138,5 @@ TYPED_TEST(WorkerFixture, MeasureLatency_SwapSameFields_MeasureReasonableLatency
 {
   TestFixture::VerifyMeasureLatency();
 }
+
+}  // namespace dbgroup::benchmark::component::test
