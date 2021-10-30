@@ -58,3 +58,4 @@ endfunction()
 
 # add unit tests to build targets
 ADD_CPP_BENCH_TEST("worker_test")
+ADD_CPP_BENCH_TEST("benchmarker_test")

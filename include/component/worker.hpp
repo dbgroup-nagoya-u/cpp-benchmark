@@ -47,7 +47,7 @@ class Worker
    */
   Worker(  //
       Target &target,
-      std::vector<Operation> &&operations)
+      const std::vector<Operation> &&operations)
       : target_{target},
         operations_{operations},
         total_exec_time_nano_{0},
@@ -149,7 +149,7 @@ class Worker
   Target &target_;
 
   /// MwCAS target filed addresses for each operation
-  std::vector<Operation> operations_;
+  const std::vector<Operation> operations_;
 
   /// total execution time [ns]
   size_t total_exec_time_nano_;

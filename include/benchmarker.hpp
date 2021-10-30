@@ -20,6 +20,7 @@
 #include <chrono>
 #include <future>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -32,19 +33,22 @@
 #include "component/common.hpp"
 #include "component/worker.hpp"
 
+namespace dbgroup::benchmark
+{
 /**
  * @brief A class to run MwCAS benchmark.
  *
  * @tparam Target An implementation of MwCAS algorithms.
  */
-template <class Target, class OperationEngine>
+template <class Target, class Operation, class OperationEngine>
 class Benchmarker
 {
   /*################################################################################################
    * Type aliases
    *##############################################################################################*/
 
-  using Worker_t = Worker<Target>;
+  using Worker_t = component::Worker<Target, Operation>;
+  using Worker_p = std::unique_ptr<Worker_t>;
 
  public:
   /*################################################################################################
@@ -73,6 +77,7 @@ class Benchmarker
       const bool output_as_csv)
       : total_exec_num_{exec_num},
         thread_num_{thread_num},
+        total_sample_num_{(total_exec_num_ < kMaxLatencyNum) ? total_exec_num_ : kMaxLatencyNum},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
@@ -80,9 +85,6 @@ class Benchmarker
         ops_engine_{ops_engine}
   {
     Log("*** START BENCHMARK ***");
-
-    Log("...Set up target data for benchmaring.");
-    bench_target_.SetUp();
   }
 
   /*################################################################################################
@@ -93,13 +95,7 @@ class Benchmarker
    * @brief Destroy the Benchmarker object.
    *
    */
-  ~Benchmarker()
-  {
-    Log("...Tear down target data.");
-    bench_target_.TearDown();
-
-    Log("*** FINISH ***\n");
-  }
+  ~Benchmarker() { Log("*** FINISH ***\n"); }
 
   /*################################################################################################
    * Public utility functions
@@ -117,27 +113,22 @@ class Benchmarker
      *--------------------------------------------------------------------------------------------*/
     Log("...Prepare workers for benchmarking.");
 
-    std::vector<std::future<Worker_t *>> futures;
+    std::vector<std::future<Worker_p>> futures;
 
     {  // create a lock to stop workers from running
       const auto lock = std::unique_lock<std::shared_mutex>(mutex_1st_);
 
       // create workers in each thread
       std::mt19937_64 rand{random_seed_};
-      const size_t total_sample_size =
-          (total_exec_num_ < kMaxLatencyNum) ? total_exec_num_ : kMaxLatencyNum;
       size_t exec_num = total_exec_num_ / thread_num_;
-      size_t sample_num = total_sample_size / thread_num_;
       for (size_t i = 0; i < thread_num_; ++i) {
         if (i == thread_num_ - 1) {
           exec_num = total_exec_num_ - exec_num * (thread_num_ - 1);
-          sample_num = total_sample_size - sample_num * (thread_num_ - 1);
         }
 
-        std::promise<Worker_t *> p;
+        std::promise<Worker_p> p;
         futures.emplace_back(p.get_future());
-        std::thread{&Benchmarker::RunWorker, this, std::move(p), exec_num, sample_num, rand()}
-            .detach();
+        std::thread{&Benchmarker::RunWorker, this, std::move(p), exec_num, rand()}.detach();
       }
 
       // wait for all workers to be created
@@ -162,7 +153,7 @@ class Benchmarker
      *--------------------------------------------------------------------------------------------*/
     Log("...Finish running.");
 
-    std::vector<Worker_t *> results;
+    std::vector<Worker_p> results;
     results.reserve(thread_num_);
     for (auto &&future : futures) {
       results.emplace_back(future.get());
@@ -172,10 +163,6 @@ class Benchmarker
       LogThroughput(results);
     } else {
       LogLatency(results);
-    }
-
-    for (auto &&worker : results) {
-      delete worker;
     }
   }
 
@@ -206,21 +193,23 @@ class Benchmarker
    */
   void
   RunWorker(  //
-      std::promise<Worker_t *> p,
+      std::promise<Worker_p> p,
       const size_t exec_num,
-      const size_t sample_num,
       const size_t random_seed)
   {
     // prepare a worker
-    Worker_t *worker;
+    Worker_p worker;
 
     {  // create a lock to stop a main thread
       const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd_);
-      worker = new Worker_t{bench_target_, ops_engine_.Generate(exec_num, random_seed)};
+
+      const auto operations = ops_engine_.Generate(exec_num, random_seed);
+      worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
       const auto guard = std::shared_lock<std::shared_mutex>(mutex_1st_);
+
       if (measure_throughput_) {
         worker->MeasureThroughput();
       } else {
@@ -228,13 +217,7 @@ class Benchmarker
       }
     }  // unlock to notice that this worker has measured thuroughput/latency
 
-    if (!measure_throughput_) {
-      // wait for all workers to finish
-      const auto guard = std::shared_lock<std::shared_mutex>(mutex_2nd_);
-      worker->SortLatencies(sample_num);
-    }
-
-    p.set_value(worker);
+    p.set_value(std::move(worker));
   }
 
   /**
@@ -243,7 +226,7 @@ class Benchmarker
    * @param workers worker pointers that hold benchmark results.
    */
   void
-  LogThroughput(const std::vector<Worker_t *> &workers) const
+  LogThroughput(const std::vector<Worker_p> &workers) const
   {
     size_t avg_nano_time = 0;
     for (auto &&worker : workers) {
@@ -266,14 +249,18 @@ class Benchmarker
    * @param workers worker pointers that hold benchmark results.
    */
   void
-  LogLatency(const std::vector<Worker_t *> &workers) const
+  LogLatency(const std::vector<Worker_p> &workers) const
   {
     std::vector<size_t> latencies;
     latencies.reserve(kMaxLatencyNum);
 
     // sort all execution time
-    for (auto &&worker : workers) {
-      auto worker_latencies = worker->GetLatencies();
+    for (size_t i = 0, sample_num = total_sample_num_ / thread_num_; i < thread_num_; ++i) {
+      if (i == thread_num_ - 1) {
+        sample_num = total_sample_num_ - sample_num * (thread_num_ - 1);
+      }
+
+      auto worker_latencies = workers[i]->GetLatencies(sample_num);
       latencies.insert(latencies.end(), worker_latencies.begin(), worker_latencies.end());
     }
     std::sort(latencies.begin(), latencies.end());
@@ -304,7 +291,7 @@ class Benchmarker
    * @param message an output message
    */
   void
-  Log(const char *message)
+  Log(const char *message) const
   {
     if (!output_as_csv_) {
       std::cout << message << std::endl;
@@ -320,6 +307,9 @@ class Benchmarker
 
   /// the number of execution threads
   const size_t thread_num_;
+
+  /// the total number of sampled execution time for computing percentiled latency
+  const size_t total_sample_num_;
 
   /// a base random seed
   const size_t random_seed_;
@@ -342,3 +332,5 @@ class Benchmarker
   /// a mutex to control workers
   std::shared_mutex mutex_2nd_;
 };
+
+}  // namespace dbgroup::benchmark
