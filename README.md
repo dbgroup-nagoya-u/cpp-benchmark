@@ -1,6 +1,6 @@
 # C++ Benchmarker
 
-![Unit Tests](https://github.com/dbgroup-nagoya-u/cpp-benchmark/workflows/Unit%20Tests/badge.svg?branch=main)
+[![Ubuntu-20.04](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/unit_tests.yaml/badge.svg?branch=main)](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/unit_tests.yaml)
 
 ## Build
 
