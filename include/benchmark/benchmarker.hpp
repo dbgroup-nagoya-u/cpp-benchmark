@@ -27,6 +27,7 @@
 #include <mutex>
 #include <random>
 #include <shared_mutex>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -76,7 +77,8 @@ class Benchmarker
       const size_t thread_num,
       const size_t random_seed,
       const bool measure_throughput,
-      const bool output_as_csv)
+      const bool output_as_csv,
+      const std::string &target_name = "NO-NAME TARGET")
       : total_exec_num_{exec_num},
         thread_num_{thread_num},
         total_sample_num_{(total_exec_num_ < kMaxLatencyNum) ? total_exec_num_ : kMaxLatencyNum},
@@ -86,7 +88,7 @@ class Benchmarker
         bench_target_{bench_target},
         ops_engine_{ops_engine}
   {
-    Log("*** START BENCHMARK ***");
+    Log("*** START " + target_name + " ***");
   }
 
   /*################################################################################################
@@ -292,7 +294,7 @@ class Benchmarker
    * @param message an output message
    */
   void
-  Log(const char *message) const
+  Log(const std::string &message) const
   {
     if (!output_as_csv_) {
       std::cout << message << std::endl;
