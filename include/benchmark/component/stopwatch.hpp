@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
+#define CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
 
 #include <chrono>
 
@@ -111,3 +112,5 @@ class StopWatch
 };
 
 }  // namespace dbgroup::benchmark::component
+
+#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H

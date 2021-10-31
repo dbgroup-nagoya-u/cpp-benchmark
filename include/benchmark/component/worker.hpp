@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_H
+#define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_H
 
 #include <algorithm>
 #include <random>
@@ -172,3 +173,5 @@ class Worker
 };
 
 }  // namespace dbgroup::benchmark::component
+
+#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_H

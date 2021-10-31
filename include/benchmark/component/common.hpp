@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_COMMON_H
+#define CPP_BENCHMARK_BENCHMARK_COMPONENT_COMMON_H
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+
+#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_COMMON_H

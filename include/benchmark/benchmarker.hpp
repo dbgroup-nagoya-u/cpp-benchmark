@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
+#define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
 
 #include <algorithm>
 #include <chrono>
@@ -334,3 +335,5 @@ class Benchmarker
 };
 
 }  // namespace dbgroup::benchmark
+
+#endif  // CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
