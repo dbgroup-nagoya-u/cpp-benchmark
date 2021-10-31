@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "benchmarker.hpp"
+#include "benchmark/benchmarker.hpp"
 
 #include <memory>
 
-#include "component/stopwatch.hpp"
-#include "component/worker.hpp"
+#include "benchmark/component/stopwatch.hpp"
+#include "benchmark/component/worker.hpp"
 #include "gtest/gtest.h"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
@@ -60,16 +60,16 @@ class BenchmarkerFixture : public ::testing::Test
   void
   VerifyMeasureThroughput(const size_t thread_num)
   {
-    benchmarker_ = std::make_unique<Benchmarker_t>(kExecNum, thread_num, kRandomSeed, target_,
-                                                   ops_engine_, true, false);
+    benchmarker_ = std::make_unique<Benchmarker_t>(target_, ops_engine_, kExecNum, thread_num,
+                                                   kRandomSeed, true, false);
     benchmarker_->Run();
   }
 
   void
   VerifyMeasureLatency(const size_t thread_num)
   {
-    benchmarker_ = std::make_unique<Benchmarker_t>(kExecNum, thread_num, kRandomSeed, target_,
-                                                   ops_engine_, false, false);
+    benchmarker_ = std::make_unique<Benchmarker_t>(target_, ops_engine_, kExecNum, thread_num,
+                                                   kRandomSeed, false, false);
     benchmarker_->Run();
   }
 

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMAKER_TEST_SAMPLE_OPERATION_H_
-#define CPP_BENCHMAKER_TEST_SAMPLE_OPERATION_H_
+#ifndef CPP_BENCHMARK_TEST_SAMPLE_OPERATION_H_
+#define CPP_BENCHMARK_TEST_SAMPLE_OPERATION_H_
 
 #include "common.hpp"
 
@@ -31,4 +31,4 @@ class SampleOperation
   size_t val;
 };
 
-#endif  // CPP_BENCHMAKER_TEST_SAMPLE_OPERATION_H_
+#endif  // CPP_BENCHMARK_TEST_SAMPLE_OPERATION_H_

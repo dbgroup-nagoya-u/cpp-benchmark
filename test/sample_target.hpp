@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMAKER_TEST_SAMPLE_TARGET_H_
-#define CPP_BENCHMAKER_TEST_SAMPLE_TARGET_H_
+#ifndef CPP_BENCHMARK_TEST_SAMPLE_TARGET_H_
+#define CPP_BENCHMARK_TEST_SAMPLE_TARGET_H_
 
 #include <atomic>
 #include <mutex>
@@ -63,4 +63,4 @@ SampleTarget<std::atomic_size_t>::Execute(const SampleOperation ops)
   reinterpret_cast<std::atomic_size_t*>(&sum_)->fetch_add(ops.val);
 }
 
-#endif  // CPP_BENCHMAKER_TEST_SAMPLE_TARGET_H_
+#endif  // CPP_BENCHMARK_TEST_SAMPLE_TARGET_H_

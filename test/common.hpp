@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMAKER_TEST_COMMON_H_
-#define CPP_BENCHMAKER_TEST_COMMON_H_
+#ifndef CPP_BENCHMARK_TEST_COMMON_H_
+#define CPP_BENCHMARK_TEST_COMMON_H_
 
 #include <cassert>
 #include <cstddef>
@@ -27,4 +27,4 @@ static constexpr size_t kThreadNum = CPP_BENCH_TEST_THREAD_NUM;
 static constexpr size_t kThreadNum = 8;
 #endif
 
-#endif  // CPP_BENCHMAKER_TEST_COMMON_H_
+#endif  // CPP_BENCHMARK_TEST_COMMON_H_
