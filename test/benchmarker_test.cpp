@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "benchmarker.hpp"
+#include "benchmark/benchmarker.hpp"
 
 #include <memory>
 
-#include "component/stopwatch.hpp"
-#include "component/worker.hpp"
+#include "benchmark/component/stopwatch.hpp"
+#include "benchmark/component/worker.hpp"
 #include "gtest/gtest.h"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
