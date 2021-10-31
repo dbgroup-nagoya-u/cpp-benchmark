@@ -61,20 +61,20 @@ class Benchmarker
   /**
    * @brief Construct a new Benchmarker object.
    *
+   * @param bench_target a reference to an actual target implementation.
+   * @param ops_engine a reference to a operation generator.
    * @param exec_num the total number of executions for benchmarking.
    * @param thread_num the number of worker threads.
    * @param random_seed a base random seed.
-   * @param bench_target a reference to an actual target implementation.
-   * @param ops_engine a reference to a operation generator.
    * @param measure_throughput a flag to measure throughput (if true) or latency (if false).
    * @param output_as_csv a flag to output benchmarking results as CSV or TEXT.
    */
   Benchmarker(  //
+      Target &bench_target,
+      OperationEngine &ops_engine,
       const size_t exec_num,
       const size_t thread_num,
       const size_t random_seed,
-      Target &bench_target,
-      OperationEngine &ops_engine,
       const bool measure_throughput,
       const bool output_as_csv)
       : total_exec_num_{exec_num},
