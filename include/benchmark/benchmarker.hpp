@@ -124,15 +124,12 @@ class Benchmarker
 
       // create workers in each thread
       std::mt19937_64 rand{random_seed_};
-      size_t exec_num = total_exec_num_ / thread_num_;
       for (size_t i = 0; i < thread_num_; ++i) {
-        if (i == thread_num_ - 1) {
-          exec_num = total_exec_num_ - exec_num * (thread_num_ - 1);
-        }
+        const size_t n = (total_exec_num_ + i) / thread_num_;
 
         std::promise<Worker_p> p;
         futures.emplace_back(p.get_future());
-        std::thread{&Benchmarker::RunWorker, this, std::move(p), exec_num, rand()}.detach();
+        std::thread{&Benchmarker::RunWorker, this, std::move(p), n, rand()}.detach();
       }
 
       // wait for all workers to be created
@@ -258,12 +255,9 @@ class Benchmarker
     latencies.reserve(kMaxLatencyNum);
 
     // sort all execution time
-    for (size_t i = 0, sample_num = total_sample_num_ / thread_num_; i < thread_num_; ++i) {
-      if (i == thread_num_ - 1) {
-        sample_num = total_sample_num_ - sample_num * (thread_num_ - 1);
-      }
-
-      auto worker_latencies = workers[i]->GetLatencies(sample_num);
+    for (size_t i = 0; i < thread_num_; ++i) {
+      const size_t n = (total_sample_num_ + i) / thread_num_;
+      auto worker_latencies = workers[i]->GetLatencies(n);
       latencies.insert(latencies.end(), worker_latencies.begin(), worker_latencies.end());
     }
     std::sort(latencies.begin(), latencies.end());
