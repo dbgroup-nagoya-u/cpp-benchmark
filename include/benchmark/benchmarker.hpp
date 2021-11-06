@@ -220,7 +220,7 @@ class Benchmarker
       }
     }  // unlock to notice that this worker has measured thuroughput/latency
 
-    p.set_value(std::move(worker));
+    p.set_value_at_thread_exit(std::move(worker));
   }
 
   /**
