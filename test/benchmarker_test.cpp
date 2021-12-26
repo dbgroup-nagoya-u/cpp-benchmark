@@ -20,28 +20,30 @@
 
 #include "benchmark/component/stopwatch.hpp"
 #include "benchmark/component/worker.hpp"
-#include "gtest/gtest.h"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
+
+// use GoogleTest for unit testing
+#include "gtest/gtest.h"
 
 namespace dbgroup::benchmark::test
 {
 template <class Implementation>
 class BenchmarkerFixture : public ::testing::Test
 {
-  /*################################################################################################
+  /*####################################################################################
    * Type aliases
-   *##############################################################################################*/
+   *##################################################################################*/
 
   using Target_t = SampleTarget<Implementation>;
   using Worker_t = component::Worker<Target_t, SampleOperation>;
   using Benchmarker_t = Benchmarker<Target_t, SampleOperation, SampleOperationEngine>;
 
  protected:
-  /*################################################################################################
+  /*####################################################################################
    * Setup/Teardown
-   *##############################################################################################*/
+   *##################################################################################*/
 
   void
   SetUp() override
@@ -53,9 +55,9 @@ class BenchmarkerFixture : public ::testing::Test
   {
   }
 
-  /*################################################################################################
+  /*####################################################################################
    * Functions for verification
-   *##############################################################################################*/
+   *##################################################################################*/
 
   void
   VerifyMeasureThroughput(const size_t thread_num)
@@ -74,16 +76,16 @@ class BenchmarkerFixture : public ::testing::Test
   }
 
  private:
-  /*################################################################################################
+  /*####################################################################################
    * Internal constants
-   *##############################################################################################*/
+   *##################################################################################*/
 
   static constexpr size_t kExecNum = 1e6;
   static constexpr size_t kRandomSeed = 0;
 
-  /*################################################################################################
+  /*####################################################################################
    * Internal member variables
-   *##############################################################################################*/
+   *##################################################################################*/
 
   Target_t target_{};
 
@@ -92,33 +94,33 @@ class BenchmarkerFixture : public ::testing::Test
   std::unique_ptr<Benchmarker_t> benchmarker_{};
 };
 
-/*##################################################################################################
+/*######################################################################################
  * Preparation for typed testing
- *################################################################################################*/
+ *####################################################################################*/
 
 using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
-TYPED_TEST_CASE(BenchmarkerFixture, Implementations);
+TYPED_TEST_SUITE(BenchmarkerFixture, Implementations);
 
-/*##################################################################################################
+/*######################################################################################
  * Unit test definitions
- *################################################################################################*/
+ *####################################################################################*/
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithSingleWorker_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithSingleWorkerSucceed)
 {
   TestFixture::VerifyMeasureThroughput(1);
 }
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithSingleWorker_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithSingleWorkerSucceed)
 {
   TestFixture::VerifyMeasureLatency(1);
 }
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithMultiWorkers_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithMultiWorkersSucceed)
 {
   TestFixture::VerifyMeasureThroughput(kThreadNum);
 }
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithMultiWorkers_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithMultiWorkersSucceed)
 {
   TestFixture::VerifyMeasureLatency(kThreadNum);
 }

@@ -22,13 +22,11 @@
 class SampleOperation
 {
  public:
-  constexpr SampleOperation() : val{0} {}
+  constexpr SampleOperation() = default;
 
   explicit constexpr SampleOperation(const size_t val) : val{val} {}
 
-  ~SampleOperation() = default;
-
-  size_t val;
+  size_t val{0};
 };
 
 #endif  // CPP_BENCHMARK_TEST_SAMPLE_OPERATION_H_

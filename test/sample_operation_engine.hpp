@@ -25,14 +25,13 @@
 class SampleOperationEngine
 {
  public:
-  constexpr SampleOperationEngine() {}
+  constexpr SampleOperationEngine() = default;
 
-  ~SampleOperationEngine() = default;
-
-  std::vector<SampleOperation>
-  Generate(  //
+  [[nodiscard]] auto
+  Generate(  // NOLINT
       const size_t n,
-      [[maybe_unused]] const size_t random_seed) const
+      [[maybe_unused]] const size_t random_seed) const  //
+      -> std::vector<SampleOperation>
   {
     return std::vector{n, SampleOperation{1}};
   }

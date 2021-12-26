@@ -19,27 +19,29 @@
 #include <memory>
 
 #include "benchmark/component/stopwatch.hpp"
-#include "gtest/gtest.h"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
+
+// use GoogleTest for unit testing
+#include "gtest/gtest.h"
 
 namespace dbgroup::benchmark::component::test
 {
 template <class Implementation>
 class WorkerFixture : public ::testing::Test
 {
-  /*################################################################################################
+  /*####################################################################################
    * Type aliases
-   *##############################################################################################*/
+   *##################################################################################*/
 
   using Target_t = SampleTarget<Implementation>;
   using Worker_t = Worker<Target_t, SampleOperation>;
 
  protected:
-  /*################################################################################################
+  /*####################################################################################
    * Setup/Teardown
-   *##############################################################################################*/
+   *##################################################################################*/
 
   void
   SetUp() override
@@ -54,9 +56,9 @@ class WorkerFixture : public ::testing::Test
   {
   }
 
-  /*################################################################################################
+  /*####################################################################################
    * Functions for verification
-   *##############################################################################################*/
+   *##################################################################################*/
 
   void
   VerifyMeasureThroughput()
@@ -97,17 +99,17 @@ class WorkerFixture : public ::testing::Test
   }
 
  private:
-  /*################################################################################################
+  /*####################################################################################
    * Internal constants
-   *##############################################################################################*/
+   *##################################################################################*/
 
   static constexpr size_t kExecNum = 1e3;
   static constexpr double kSampleNum = 1e2;
   static constexpr size_t kRandomSeed = 0;
 
-  /*################################################################################################
+  /*####################################################################################
    * Internal member variables
-   *##############################################################################################*/
+   *##################################################################################*/
 
   Target_t target_{};
 
@@ -116,23 +118,23 @@ class WorkerFixture : public ::testing::Test
   StopWatch stopwatch_{};
 };
 
-/*##################################################################################################
+/*######################################################################################
  * Preparation for typed testing
- *################################################################################################*/
+ *####################################################################################*/
 
 using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
-TYPED_TEST_CASE(WorkerFixture, Implementations);
+TYPED_TEST_SUITE(WorkerFixture, Implementations);
 
-/*##################################################################################################
+/*######################################################################################
  * Unit test definitions
- *################################################################################################*/
+ *####################################################################################*/
 
-TYPED_TEST(WorkerFixture, MeasureThroughput_UseSampleIncrementor_MeasureReasonableExecutionTime)
+TYPED_TEST(WorkerFixture, MeasureThroughputWithSampleIncrementorMeasureReasonableExecutionTime)
 {
   TestFixture::VerifyMeasureThroughput();
 }
 
-TYPED_TEST(WorkerFixture, MeasureLatency_UseSampleIncrementor_MeasureReasonableLatency)
+TYPED_TEST(WorkerFixture, MeasureLatencyWithSampleIncrementorMeasureReasonableLatency)
 {
   TestFixture::VerifyMeasureLatency();
 }

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
-#define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
+#ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
+#define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
 
 #include <algorithm>
 #include <chrono>
@@ -47,17 +47,17 @@ namespace dbgroup::benchmark
 template <class Target, class Operation, class OperationEngine>
 class Benchmarker
 {
-  /*################################################################################################
+  /*####################################################################################
    * Type aliases
-   *##############################################################################################*/
+   *##################################################################################*/
 
   using Worker_t = component::Worker<Target, Operation>;
   using Worker_p = std::unique_ptr<Worker_t>;
 
  public:
-  /*################################################################################################
+  /*####################################################################################
    * Public constructors and assignment operators
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Construct a new Benchmarker object.
@@ -67,7 +67,7 @@ class Benchmarker
    * @param exec_num the total number of executions for benchmarking.
    * @param thread_num the number of worker threads.
    * @param random_seed a base random seed.
-   * @param measure_throughput a flag to measure throughput (if true) or latency (if false).
+   * @param measure_throughput a flag for measuring throughput (true) or latency (false).
    * @param output_as_csv a flag to output benchmarking results as CSV or TEXT.
    */
   Benchmarker(  //
@@ -78,7 +78,8 @@ class Benchmarker
       const size_t random_seed,
       const bool measure_throughput,
       const bool output_as_csv,
-      const std::string &target_name = "NO-NAME TARGET")
+      const std::string &target_name = "NO-NAME TARGET",
+      const char *target_latency = kDefaultLatency)
       : total_exec_num_{exec_num},
         thread_num_{thread_num},
         total_sample_num_{(total_exec_num_ < kMaxLatencyNum) ? total_exec_num_ : kMaxLatencyNum},
@@ -88,12 +89,40 @@ class Benchmarker
         bench_target_{bench_target},
         ops_engine_{ops_engine}
   {
+    if (!measure_throughput_) {
+      // prepare percentile latency
+      constexpr size_t kDefaultCapacity = 32;
+      target_latency_.reserve(kDefaultCapacity);
+
+      // split a given percentile string
+      std::string target_lat_str{target_latency};
+      size_t begin_pos = 0;
+      size_t end_pos = target_lat_str.find_first_of(',');
+      while (begin_pos < target_lat_str.size()) {
+        // extract a latency string and convert to double
+        auto &&lat = target_lat_str.substr(begin_pos, end_pos - begin_pos);
+        target_latency_.emplace_back(std::stod(lat));
+
+        // find the next latency string
+        begin_pos = end_pos + 1;
+        end_pos = target_lat_str.find_first_of(',', begin_pos);
+        if (end_pos == std::string::npos) {
+          end_pos = target_lat_str.size();
+        }
+      }
+    }
+
     Log("*** START " + target_name + " ***");
   }
 
-  /*################################################################################################
+  Benchmarker(const Benchmarker &) = delete;
+  Benchmarker &operator=(const Benchmarker &obj) = delete;
+  Benchmarker(Benchmarker &&) = delete;
+  Benchmarker &operator=(Benchmarker &&) = delete;
+
+  /*####################################################################################
    * Public destructors
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Destroy the Benchmarker object.
@@ -101,9 +130,9 @@ class Benchmarker
    */
   ~Benchmarker() { Log("*** FINISH ***\n"); }
 
-  /*################################################################################################
+  /*####################################################################################
    * Public utility functions
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Run benchmark and output results to stdout.
@@ -112,15 +141,15 @@ class Benchmarker
   void
   Run()
   {
-    /*----------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------
      * Preparation of benchmark workers
-     *--------------------------------------------------------------------------------------------*/
+     *--------------------------------------------------------------------------------*/
     Log("...Prepare workers for benchmarking.");
 
     std::vector<std::future<Worker_p>> futures;
 
     {  // create a lock to stop workers from running
-      const auto lock = std::unique_lock<std::shared_mutex>(mutex_1st_);
+      [[maybe_unused]] auto &&lock = std::unique_lock<std::shared_mutex>(mutex_1st_);
 
       // create workers in each thread
       std::mt19937_64 rand{random_seed_};
@@ -134,24 +163,24 @@ class Benchmarker
 
       // wait for all workers to be created
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      const auto guard = std::unique_lock<std::shared_mutex>(mutex_2nd_);
+      [[maybe_unused]] auto &&guard = std::unique_lock<std::shared_mutex>(mutex_2nd_);
     }  // unlock to run workers
 
-    /*----------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------
      * Measuring throughput/latency
-     *--------------------------------------------------------------------------------------------*/
+     *--------------------------------------------------------------------------------*/
     Log("...Run workers.");
 
     {  // create a lock to stop workers from running
-      const auto lock = std::unique_lock<std::shared_mutex>(mutex_2nd_);
+      [[maybe_unused]] auto &&lock = std::unique_lock<std::shared_mutex>(mutex_2nd_);
 
       // wait for all workers to finish measuring throughput
-      const auto guard = std::unique_lock<std::shared_mutex>(mutex_1st_);
+      [[maybe_unused]] auto &&guard = std::unique_lock<std::shared_mutex>(mutex_1st_);
     }  // unlock to run workers
 
-    /*----------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------
      * Output benchmarkings results
-     *--------------------------------------------------------------------------------------------*/
+     *--------------------------------------------------------------------------------*/
     Log("...Finish running.");
 
     std::vector<Worker_p> results;
@@ -168,21 +197,21 @@ class Benchmarker
   }
 
  private:
-  /*################################################################################################
+  /*####################################################################################
    * Internal constants
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /// limit the target of latency calculation
   static constexpr size_t kMaxLatencyNum = 1e6;
 
   /// targets for calculating parcentile latency
-  static constexpr double kTargetPercentiles[] = {0.00, 0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30,
-                                                  0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70,
-                                                  0.75, 0.80, 0.85, 0.90, 0.95, 0.99, 1.00};
+  static constexpr auto kDefaultLatency =
+      "0.01,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,"
+      "0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,0.99";
 
-  /*################################################################################################
+  /*####################################################################################
    * Internal utility functions
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Run a worker thread to measure throughput or latency.
@@ -201,14 +230,14 @@ class Benchmarker
     Worker_p worker;
 
     {  // create a lock to stop a main thread
-      const auto lock = std::shared_lock<std::shared_mutex>(mutex_2nd_);
+      [[maybe_unused]] auto &&lock = std::shared_lock<std::shared_mutex>(mutex_2nd_);
 
-      const auto operations = ops_engine_.Generate(exec_num, random_seed);
+      const auto &operations = ops_engine_.Generate(exec_num, random_seed);
       worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
     }  // unlock to notice that this worker has been created
 
     {  // wait for benchmark to be ready
-      const auto guard = std::shared_lock<std::shared_mutex>(mutex_1st_);
+      [[maybe_unused]] auto &&guard = std::shared_lock<std::shared_mutex>(mutex_1st_);
 
       if (measure_throughput_) {
         worker->MeasureThroughput();
@@ -257,28 +286,22 @@ class Benchmarker
     // sort all execution time
     for (size_t i = 0; i < thread_num_; ++i) {
       const size_t n = (total_sample_num_ + i) / thread_num_;
-      auto worker_latencies = workers[i]->GetLatencies(n);
+      auto &&worker_latencies = workers[i]->GetLatencies(n);
       latencies.insert(latencies.end(), worker_latencies.begin(), worker_latencies.end());
     }
     std::sort(latencies.begin(), latencies.end());
 
-    Log("Percentiled Latencies [ns]:");
-    for (auto &&percentile : kTargetPercentiles) {
+    Log("Percentiled Latency [ns]:");
+    for (auto &&percentile : target_latency_) {
       const size_t percentiled_idx =
-          (percentile == 1.0) ? latencies.size() - 1 : latencies.size() * percentile;
+          (percentile == 1.0) ? latencies.size() - 1 : latencies.size() * percentile;  // NOLINT
+
       if (!output_as_csv_) {
         std::cout << "  " << std::fixed << std::setprecision(2) << percentile << ": ";
-      }
-      std::cout << latencies[percentiled_idx];
-      if (!output_as_csv_) {
-        std::cout << std::endl;
       } else {
-        if (percentile < 1.0) {
-          std::cout << ",";
-        } else {
-          std::cout << std::endl;
-        }
+        std::cout << percentile << ",";
       }
+      std::cout << latencies[percentiled_idx] << std::endl;
     }
   }
 
@@ -295,41 +318,44 @@ class Benchmarker
     }
   }
 
-  /*################################################################################################
+  /*####################################################################################
    * Internal member variables
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /// the total number of executions for benchmarking
-  const size_t total_exec_num_;
+  const size_t total_exec_num_{};
 
   /// the number of worker threads
-  const size_t thread_num_;
+  const size_t thread_num_{};
 
   /// the total number of sampled execution time for computing percentiled latency
-  const size_t total_sample_num_;
+  const size_t total_sample_num_{};
 
   /// a base random seed
-  const size_t random_seed_;
+  const size_t random_seed_{};
 
   /// a flag to measure throughput (if true) or latency (if false)
-  const bool measure_throughput_;
+  const bool measure_throughput_{};
 
   /// a flat to output measured results as CSV or TEXT
-  const bool output_as_csv_;
+  const bool output_as_csv_{};
+
+  /// targets for calculating parcentile latency
+  std::vector<double> target_latency_{};
 
   /// a benchmaring target
-  Target &bench_target_;
+  Target &bench_target_{};
 
   /// an target operation generator
-  OperationEngine &ops_engine_;
+  OperationEngine &ops_engine_{};
 
   /// a mutex to control workers
-  std::shared_mutex mutex_1st_;
+  std::shared_mutex mutex_1st_{};
 
   /// a mutex to control workers
-  std::shared_mutex mutex_2nd_;
+  std::shared_mutex mutex_2nd_{};
 };
 
 }  // namespace dbgroup::benchmark
 
-#endif  // CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
+#endif  // CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP

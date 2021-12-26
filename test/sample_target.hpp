@@ -27,24 +27,23 @@ template <class Implementation>
 class SampleTarget
 {
  public:
-  constexpr SampleTarget() : sum_{0}, mtx_{} {}
+  constexpr SampleTarget() = default;
 
-  ~SampleTarget() = default;
+  void Execute(SampleOperation ops);
 
-  void Execute(const SampleOperation ops);
-
-  size_t
-  GetSum() const
+  [[nodiscard]] auto
+  GetSum() const  //
+      -> size_t
   {
     return sum_;
   }
 
  private:
   /// target data
-  size_t sum_;
+  size_t sum_{0};
 
   /// mutex for lock-based incrementor
-  std::mutex mtx_;
+  std::mutex mtx_{};
 };
 
 template <>

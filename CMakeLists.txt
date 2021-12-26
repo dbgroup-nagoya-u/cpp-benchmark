@@ -21,15 +21,9 @@ set(CPP_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 #--------------------------------------------------------------------------------------#
 
 add_library(cpp_bench INTERFACE)
+add_library(cpp_bench::cpp_bench ALIAS cpp_bench)
 target_compile_features(cpp_bench INTERFACE
   "cxx_std_17"
-)
-target_compile_options(cpp_bench INTERFACE
-  -Wall
-  -Wextra
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
 )
 target_include_directories(cpp_bench INTERFACE
   "${CPP_BENCH_SOURCE_DIR}/include"

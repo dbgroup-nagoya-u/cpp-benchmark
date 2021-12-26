@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
-#define CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
+#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP
+#define CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP
 
 #include <chrono>
 
@@ -29,31 +29,31 @@ namespace dbgroup::benchmark::component
  */
 class StopWatch
 {
-  /*################################################################################################
+  /*####################################################################################
    * Type aliases
-   *##############################################################################################*/
+   *##################################################################################*/
 
   using Clock_t = ::std::chrono::high_resolution_clock;
 
  public:
-  /*################################################################################################
+  /*####################################################################################
    * Public constructors and assignment operators
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Create a new StopWatch object.
    *
    */
-  constexpr StopWatch() : start_time_{}, end_time_{} {}
+  constexpr StopWatch() = default;
 
   constexpr StopWatch(const StopWatch &) = default;
   constexpr StopWatch &operator=(const StopWatch &obj) = default;
   constexpr StopWatch(StopWatch &&) = default;
   constexpr StopWatch &operator=(StopWatch &&) = default;
 
-  /*################################################################################################
+  /*####################################################################################
    * Public destructors
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Destroy the StopWatch object.
@@ -61,9 +61,9 @@ class StopWatch
    */
   ~StopWatch() = default;
 
-  /*################################################################################################
+  /*####################################################################################
    * Public functions
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Start this stopwatch to measure time duration.
@@ -91,26 +91,27 @@ class StopWatch
    * If Start and Stop functions are not called previously, the return value is
    * undefined.
    *
-   * @return size_t: a measured time duration [ns].
+   * @return a measured time duration [ns].
    */
-  constexpr size_t
-  GetNanoDuration() const
+  [[nodiscard]] constexpr auto
+  GetNanoDuration() const  //
+      -> size_t
   {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end_time_ - start_time_).count();
   }
 
  private:
-  /*################################################################################################
+  /*####################################################################################
    * Internal member variables
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /// a starting timestamp
-  Clock_t::time_point start_time_;
+  Clock_t::time_point start_time_{};
 
   /// an end timestamp
-  Clock_t::time_point end_time_;
+  Clock_t::time_point end_time_{};
 };
 
 }  // namespace dbgroup::benchmark::component
 
-#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
+#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP
