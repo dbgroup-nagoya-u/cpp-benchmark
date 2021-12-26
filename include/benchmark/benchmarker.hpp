@@ -271,19 +271,13 @@ class Benchmarker
     for (auto &&percentile : kTargetPercentiles) {
       const size_t percentiled_idx =
           (percentile == 1.0) ? latencies.size() - 1 : latencies.size() * percentile;
+
       if (!output_as_csv_) {
         std::cout << "  " << std::fixed << std::setprecision(2) << percentile << ": ";
-      }
-      std::cout << latencies[percentiled_idx];
-      if (!output_as_csv_) {
-        std::cout << std::endl;
       } else {
-        if (percentile < 1.0) {
-          std::cout << ",";
-        } else {
-          std::cout << std::endl;
-        }
+        std::cout << percentile << ",";
       }
+      std::cout << latencies[percentiled_idx] << std::endl;
     }
   }
 
