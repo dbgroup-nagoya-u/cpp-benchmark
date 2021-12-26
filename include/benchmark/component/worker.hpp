@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_H
-#define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_H
+#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
+#define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
 
 #include <algorithm>
 #include <random>
@@ -53,19 +53,15 @@ class Worker
   Worker(  //
       Target &target,
       const std::vector<Operation> &&operations)
-      : target_{target},
-        operations_{operations},
-        total_exec_time_nano_{0},
-        latencies_nano_{},
-        stopwatch_{}
+      : target_{target}, operations_{operations}
   {
     latencies_nano_.reserve(operations_.size());
   }
 
   Worker(const Worker &) = delete;
   Worker &operator=(const Worker &obj) = delete;
-  Worker(Worker &&) = default;
-  Worker &operator=(Worker &&) = default;
+  Worker(Worker &&) noexcept = default;
+  Worker &operator=(Worker &&) noexcept = default;
 
   /*################################################################################################
    * Public destructors
@@ -126,7 +122,7 @@ class Worker
    * @param sample_num the number of desired samples.
    * @return std::vector<size_t>: sampled latencies.
    */
-  const std::vector<size_t>
+  [[nodiscard]] std::vector<size_t>
   GetLatencies(const size_t sample_num) const
   {
     std::uniform_int_distribution<size_t> id_engine{0, latencies_nano_.size() - 1};
@@ -145,7 +141,7 @@ class Worker
   /**
    * @return total execution time.
    */
-  size_t
+  [[nodiscard]] size_t
   GetTotalExecTime() const
   {
     return total_exec_time_nano_;
@@ -157,21 +153,21 @@ class Worker
    *##############################################################################################*/
 
   /// a benchmark target
-  Target &target_;
+  Target &target_{};
 
   /// operation data to be executed by this worker
-  const std::vector<Operation> operations_;
+  const std::vector<Operation> operations_{};
 
   /// total execution time [ns]
-  size_t total_exec_time_nano_;
+  size_t total_exec_time_nano_{0};
 
   /// execution time for each operation [ns]
-  std::vector<size_t> latencies_nano_;
+  std::vector<size_t> latencies_nano_{};
 
   /// a stopwatch to measure execution time
-  StopWatch stopwatch_;
+  StopWatch stopwatch_{};
 };
 
 }  // namespace dbgroup::benchmark::component
 
-#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_H
+#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP

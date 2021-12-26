@@ -62,6 +62,7 @@
     "KAKENHI",
     "libgflags",
     "mutex",
+    "NOLINT",
     "pthread",
     "Wextra",
     "zipf"

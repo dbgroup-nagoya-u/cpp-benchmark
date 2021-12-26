@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
-#define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
+#ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
+#define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
 
 #include <algorithm>
 #include <chrono>
@@ -90,6 +90,11 @@ class Benchmarker
   {
     Log("*** START " + target_name + " ***");
   }
+
+  Benchmarker(const Benchmarker &) = delete;
+  Benchmarker &operator=(const Benchmarker &obj) = delete;
+  Benchmarker(Benchmarker &&) = delete;
+  Benchmarker &operator=(Benchmarker &&) = delete;
 
   /*################################################################################################
    * Public destructors
@@ -300,36 +305,36 @@ class Benchmarker
    *##############################################################################################*/
 
   /// the total number of executions for benchmarking
-  const size_t total_exec_num_;
+  const size_t total_exec_num_{};
 
   /// the number of worker threads
-  const size_t thread_num_;
+  const size_t thread_num_{};
 
   /// the total number of sampled execution time for computing percentiled latency
-  const size_t total_sample_num_;
+  const size_t total_sample_num_{};
 
   /// a base random seed
-  const size_t random_seed_;
+  const size_t random_seed_{};
 
   /// a flag to measure throughput (if true) or latency (if false)
-  const bool measure_throughput_;
+  const bool measure_throughput_{};
 
   /// a flat to output measured results as CSV or TEXT
-  const bool output_as_csv_;
+  const bool output_as_csv_{};
 
   /// a benchmaring target
-  Target &bench_target_;
+  Target &bench_target_{};
 
   /// an target operation generator
-  OperationEngine &ops_engine_;
+  OperationEngine &ops_engine_{};
 
   /// a mutex to control workers
-  std::shared_mutex mutex_1st_;
+  std::shared_mutex mutex_1st_{};
 
   /// a mutex to control workers
-  std::shared_mutex mutex_2nd_;
+  std::shared_mutex mutex_2nd_{};
 };
 
 }  // namespace dbgroup::benchmark
 
-#endif  // CPP_BENCHMARK_BENCHMARK_BENCHMARKER_H
+#endif  // CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
-#define CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
+#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP
+#define CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP
 
 #include <chrono>
 
@@ -44,7 +44,7 @@ class StopWatch
    * @brief Create a new StopWatch object.
    *
    */
-  constexpr StopWatch() : start_time_{}, end_time_{} {}
+  constexpr StopWatch() = default;
 
   constexpr StopWatch(const StopWatch &) = default;
   constexpr StopWatch &operator=(const StopWatch &obj) = default;
@@ -93,7 +93,7 @@ class StopWatch
    *
    * @return size_t: a measured time duration [ns].
    */
-  constexpr size_t
+  [[nodiscard]] constexpr size_t
   GetNanoDuration() const
   {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end_time_ - start_time_).count();
@@ -105,12 +105,12 @@ class StopWatch
    *##############################################################################################*/
 
   /// a starting timestamp
-  Clock_t::time_point start_time_;
+  Clock_t::time_point start_time_{};
 
   /// an end timestamp
-  Clock_t::time_point end_time_;
+  Clock_t::time_point end_time_{};
 };
 
 }  // namespace dbgroup::benchmark::component
 
-#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_H
+#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP

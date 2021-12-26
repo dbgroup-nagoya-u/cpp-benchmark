@@ -19,10 +19,12 @@
 #include <memory>
 
 #include "benchmark/component/stopwatch.hpp"
-#include "gtest/gtest.h"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
+
+// use GoogleTest for unit testing
+#include "gtest/gtest.h"
 
 namespace dbgroup::benchmark::component::test
 {
@@ -121,18 +123,18 @@ class WorkerFixture : public ::testing::Test
  *################################################################################################*/
 
 using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
-TYPED_TEST_CASE(WorkerFixture, Implementations);
+TYPED_TEST_SUITE(WorkerFixture, Implementations);
 
 /*##################################################################################################
  * Unit test definitions
  *################################################################################################*/
 
-TYPED_TEST(WorkerFixture, MeasureThroughput_UseSampleIncrementor_MeasureReasonableExecutionTime)
+TYPED_TEST(WorkerFixture, MeasureThroughputWithSampleIncrementorMeasureReasonableExecutionTime)
 {
   TestFixture::VerifyMeasureThroughput();
 }
 
-TYPED_TEST(WorkerFixture, MeasureLatency_UseSampleIncrementor_MeasureReasonableLatency)
+TYPED_TEST(WorkerFixture, MeasureLatencyWithSampleIncrementorMeasureReasonableLatency)
 {
   TestFixture::VerifyMeasureLatency();
 }

@@ -20,10 +20,12 @@
 
 #include "benchmark/component/stopwatch.hpp"
 #include "benchmark/component/worker.hpp"
-#include "gtest/gtest.h"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
+
+// use GoogleTest for unit testing
+#include "gtest/gtest.h"
 
 namespace dbgroup::benchmark::test
 {
@@ -97,28 +99,28 @@ class BenchmarkerFixture : public ::testing::Test
  *################################################################################################*/
 
 using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
-TYPED_TEST_CASE(BenchmarkerFixture, Implementations);
+TYPED_TEST_SUITE(BenchmarkerFixture, Implementations);
 
 /*##################################################################################################
  * Unit test definitions
  *################################################################################################*/
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithSingleWorker_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithSingleWorkerSucceed)
 {
   TestFixture::VerifyMeasureThroughput(1);
 }
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithSingleWorker_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithSingleWorkerSucceed)
 {
   TestFixture::VerifyMeasureLatency(1);
 }
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureThroughputWithMultiWorkers_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithMultiWorkersSucceed)
 {
   TestFixture::VerifyMeasureThroughput(kThreadNum);
 }
 
-TYPED_TEST(BenchmarkerFixture, Run_MeasureLatencyWithMultiWorkers_RunWithoutError)
+TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithMultiWorkersSucceed)
 {
   TestFixture::VerifyMeasureLatency(kThreadNum);
 }
