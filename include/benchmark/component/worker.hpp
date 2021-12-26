@@ -40,9 +40,9 @@ template <class Target, class Operation>
 class Worker
 {
  public:
-  /*################################################################################################
+  /*####################################################################################
    * Public constructors/destructors
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Construct a new Worker object.
@@ -63,9 +63,9 @@ class Worker
   Worker(Worker &&) noexcept = default;
   Worker &operator=(Worker &&) noexcept = default;
 
-  /*################################################################################################
+  /*####################################################################################
    * Public destructors
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Destroy the Worker object.
@@ -73,9 +73,9 @@ class Worker
    */
   ~Worker() = default;
 
-  /*################################################################################################
+  /*####################################################################################
    * Public utility functions
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /**
    * @brief Measure and store execution time for each operation.
@@ -120,10 +120,11 @@ class Worker
    * percentiled latency.
    *
    * @param sample_num the number of desired samples.
-   * @return std::vector<size_t>: sampled latencies.
+   * @return sampled latencies.
    */
-  [[nodiscard]] std::vector<size_t>
-  GetLatencies(const size_t sample_num) const
+  [[nodiscard]] auto
+  GetLatencies(const size_t sample_num) const  //
+      -> std::vector<size_t>
   {
     std::uniform_int_distribution<size_t> id_engine{0, latencies_nano_.size() - 1};
     std::mt19937_64 rand_engine{std::random_device{}()};
@@ -141,16 +142,17 @@ class Worker
   /**
    * @return total execution time.
    */
-  [[nodiscard]] size_t
-  GetTotalExecTime() const
+  [[nodiscard]] auto
+  GetTotalExecTime() const  //
+      -> size_t
   {
     return total_exec_time_nano_;
   }
 
  private:
-  /*################################################################################################
+  /*####################################################################################
    * Internal member variables
-   *##############################################################################################*/
+   *##################################################################################*/
 
   /// a benchmark target
   Target &target_{};
