@@ -78,7 +78,8 @@ class Benchmarker
       const size_t random_seed,
       const bool measure_throughput,
       const bool output_as_csv,
-      const std::string &target_name = "NO-NAME TARGET")
+      const std::string &target_name = "NO-NAME TARGET",
+      const char *target_latency = kDefaultLatency)
       : total_exec_num_{exec_num},
         thread_num_{thread_num},
         total_sample_num_{(total_exec_num_ < kMaxLatencyNum) ? total_exec_num_ : kMaxLatencyNum},
@@ -88,6 +89,29 @@ class Benchmarker
         bench_target_{bench_target},
         ops_engine_{ops_engine}
   {
+    if (!measure_throughput_) {
+      // prepare percentile latency
+      constexpr size_t kDefaultCapacity = 32;
+      target_latency_.reserve(kDefaultCapacity);
+
+      // split a given percentile string
+      std::string target_lat_str{target_latency};
+      size_t begin_pos = 0;
+      size_t end_pos = target_lat_str.find_first_of(',');
+      while (begin_pos < target_lat_str.size()) {
+        // extract a latency string and convert to double
+        auto &&lat = target_lat_str.substr(begin_pos, end_pos - begin_pos);
+        target_latency_.emplace_back(std::stod(lat));
+
+        // find the next latency string
+        begin_pos = end_pos + 1;
+        end_pos = target_lat_str.find_first_of(',', begin_pos);
+        if (end_pos == std::string::npos) {
+          end_pos = target_lat_str.size();
+        }
+      }
+    }
+
     Log("*** START " + target_name + " ***");
   }
 
@@ -181,9 +205,9 @@ class Benchmarker
   static constexpr size_t kMaxLatencyNum = 1e6;
 
   /// targets for calculating parcentile latency
-  static constexpr double kTargetPercentiles[] = {0.00, 0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30,
-                                                  0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70,
-                                                  0.75, 0.80, 0.85, 0.90, 0.95, 0.99, 1.00};
+  static constexpr auto kDefaultLatency =
+      "0.01,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,"
+      "0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,0.99";
 
   /*####################################################################################
    * Internal utility functions
@@ -268,9 +292,9 @@ class Benchmarker
     std::sort(latencies.begin(), latencies.end());
 
     Log("Percentiled Latencies [ns]:");
-    for (auto &&percentile : kTargetPercentiles) {
+    for (auto &&percentile : target_latency_) {
       const size_t percentiled_idx =
-          (percentile == 1.0) ? latencies.size() - 1 : latencies.size() * percentile;
+          (percentile == 1.0) ? latencies.size() - 1 : latencies.size() * percentile;  // NOLINT
 
       if (!output_as_csv_) {
         std::cout << "  " << std::fixed << std::setprecision(2) << percentile << ": ";
@@ -315,6 +339,9 @@ class Benchmarker
 
   /// a flat to output measured results as CSV or TEXT
   const bool output_as_csv_{};
+
+  /// targets for calculating parcentile latency
+  std::vector<double> target_latency_{};
 
   /// a benchmaring target
   Target &bench_target_{};
