@@ -59,7 +59,7 @@ template <>
 inline void
 SampleTarget<std::atomic_size_t>::Execute(const SampleOperation ops)
 {
-  reinterpret_cast<std::atomic_size_t*>(&sum_)->fetch_add(ops.val);
+  reinterpret_cast<std::atomic_size_t*>(&sum_)->fetch_add(ops.val);  // NOLINT
 }
 
 #endif  // CPP_BENCHMARK_TEST_SAMPLE_TARGET_H_

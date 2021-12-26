@@ -59,9 +59,9 @@ class Worker
   }
 
   Worker(const Worker &) = delete;
-  Worker &operator=(const Worker &obj) = delete;
+  auto operator=(const Worker &obj) -> Worker & = delete;
   Worker(Worker &&) noexcept = default;
-  Worker &operator=(Worker &&) noexcept = default;
+  auto operator=(Worker &&) noexcept -> Worker & = default;
 
   /*####################################################################################
    * Public destructors
@@ -84,7 +84,7 @@ class Worker
   void
   MeasureLatency()
   {
-    assert(latencies_nano_.empty());
+    assert(latencies_nano_.empty());  // NOLINT
 
     for (auto &&operation : operations_) {
       stopwatch_.Start();

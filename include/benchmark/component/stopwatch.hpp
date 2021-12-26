@@ -47,9 +47,9 @@ class StopWatch
   constexpr StopWatch() = default;
 
   constexpr StopWatch(const StopWatch &) = default;
-  constexpr StopWatch &operator=(const StopWatch &obj) = default;
+  constexpr auto operator=(const StopWatch &obj) -> StopWatch & = default;
   constexpr StopWatch(StopWatch &&) = default;
-  constexpr StopWatch &operator=(StopWatch &&) = default;
+  constexpr auto operator=(StopWatch &&) -> StopWatch & = default;
 
   /*####################################################################################
    * Public destructors

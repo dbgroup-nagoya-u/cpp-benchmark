@@ -116,9 +116,9 @@ class Benchmarker
   }
 
   Benchmarker(const Benchmarker &) = delete;
-  Benchmarker &operator=(const Benchmarker &obj) = delete;
+  auto operator=(const Benchmarker &obj) -> Benchmarker & = delete;
   Benchmarker(Benchmarker &&) = delete;
-  Benchmarker &operator=(Benchmarker &&) = delete;
+  auto operator=(Benchmarker &&) -> Benchmarker & = delete;
 
   /*####################################################################################
    * Public destructors
