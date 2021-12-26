@@ -64,6 +64,7 @@
     "mutex",
     "NOLINT",
     "pthread",
+    "stod",
     "Wextra",
     "zipf"
   ],
