@@ -20,17 +20,19 @@ set(CPP_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 # Build library
 #--------------------------------------------------------------------------------------#
 
-add_library(cpp_bench INTERFACE)
-add_library(cpp_bench::cpp_bench ALIAS cpp_bench)
-target_compile_features(cpp_bench INTERFACE
-  "cxx_std_17"
-)
-target_include_directories(cpp_bench INTERFACE
-  "${CPP_BENCH_SOURCE_DIR}/include"
-)
-target_link_libraries(cpp_bench INTERFACE
-  pthread
-)
+if(NOT TARGET cpp_bench::cpp_bench)
+  add_library(cpp_bench INTERFACE)
+  add_library(cpp_bench::cpp_bench ALIAS cpp_bench)
+  target_compile_features(cpp_bench INTERFACE
+    "cxx_std_17"
+  )
+  target_include_directories(cpp_bench INTERFACE
+    "${CPP_BENCH_SOURCE_DIR}/include"
+  )
+  target_link_libraries(cpp_bench INTERFACE
+    pthread
+  )
+endif()
 
 #--------------------------------------------------------------------------------------#
 # Build unit tests
