@@ -29,6 +29,16 @@ class SampleTarget
  public:
   constexpr SampleTarget() = default;
 
+  void
+  SetUpForWorker()
+  {
+  }
+
+  void
+  TearDownForWorker()
+  {
+  }
+
   void Execute(SampleOperation ops);
 
   [[nodiscard]] auto

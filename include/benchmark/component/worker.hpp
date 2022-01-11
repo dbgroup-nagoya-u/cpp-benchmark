@@ -56,6 +56,7 @@ class Worker
       : target_{target}, operations_{operations}
   {
     latencies_nano_.reserve(operations_.size());
+    target_.SetUpForWorker();
   }
 
   Worker(const Worker &) = delete;
@@ -71,7 +72,7 @@ class Worker
    * @brief Destroy the Worker object.
    *
    */
-  ~Worker() = default;
+  ~Worker() { target_.TearDownForWorker(); }
 
   /*####################################################################################
    * Public utility functions
