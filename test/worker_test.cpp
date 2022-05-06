@@ -69,8 +69,9 @@ class WorkerFixture : public ::testing::Test
 
     // check the total execution time is reasonable
     const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
-    EXPECT_GE(worker_->GetTotalExecTime(), 0);
-    EXPECT_LE(worker_->GetTotalExecTime(), wrapperred_exec_time);
+    const auto &results = worker_->MoveMeasurements();
+    EXPECT_GE(results->GetTotalExecTime(), 0);
+    EXPECT_LE(results->GetTotalExecTime(), wrapperred_exec_time);
 
     // check the worker performs all the operations
     EXPECT_EQ(kExecNum, target_.GetSum());
@@ -84,7 +85,8 @@ class WorkerFixture : public ::testing::Test
     stopwatch_.Stop();
 
     // check random sampling is performed
-    const auto latencies = worker_->GetLatencies(kSampleNum);
+    const auto &results = worker_->MoveMeasurements();
+    const auto latencies = results->GetLatencies(kSampleNum);
     EXPECT_EQ(kSampleNum, latencies.size());
 
     // check each latency is reasonable

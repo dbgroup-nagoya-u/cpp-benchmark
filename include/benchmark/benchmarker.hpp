@@ -53,6 +53,7 @@ class Benchmarker
 
   using Worker_t = component::Worker<Target, Operation>;
   using Worker_p = std::unique_ptr<Worker_t>;
+  using Result_p = std::unique_ptr<component::Measurements>;
 
  public:
   /*####################################################################################
@@ -146,7 +147,7 @@ class Benchmarker
      *--------------------------------------------------------------------------------*/
     Log("...Prepare workers for benchmarking.");
 
-    std::vector<std::future<Worker_p>> futures;
+    std::vector<std::future<Result_p>> futures{};
 
     {  // create a lock to stop workers from running
       [[maybe_unused]] auto &&lock = std::unique_lock<std::shared_mutex>(mutex_1st_);
@@ -156,7 +157,7 @@ class Benchmarker
       for (size_t i = 0; i < thread_num_; ++i) {
         const size_t n = (total_exec_num_ + i) / thread_num_;
 
-        std::promise<Worker_p> p;
+        std::promise<Result_p> p{};
         futures.emplace_back(p.get_future());
         std::thread{&Benchmarker::RunWorker, this, std::move(p), n, rand()}.detach();
       }
@@ -183,7 +184,7 @@ class Benchmarker
      *--------------------------------------------------------------------------------*/
     Log("...Finish running.");
 
-    std::vector<Worker_p> results;
+    std::vector<Result_p> results{};
     results.reserve(thread_num_);
     for (auto &&future : futures) {
       results.emplace_back(future.get());
@@ -222,12 +223,12 @@ class Benchmarker
    */
   void
   RunWorker(  //
-      std::promise<Worker_p> p,
+      std::promise<Result_p> p,
       const size_t exec_num,
       const size_t random_seed)
   {
     // prepare a worker
-    Worker_p worker;
+    Worker_p worker{nullptr};
 
     {  // create a lock to stop a main thread
       [[maybe_unused]] auto &&lock = std::shared_lock<std::shared_mutex>(mutex_2nd_);
@@ -246,20 +247,20 @@ class Benchmarker
       }
     }  // unlock to notice that this worker has measured thuroughput/latency
 
-    p.set_value_at_thread_exit(std::move(worker));
+    p.set_value_at_thread_exit(worker->MoveMeasurements());
   }
 
   /**
    * @brief Compute a throughput score and output it to stdout.
    *
-   * @param workers worker pointers that hold benchmark results.
+   * @param results benchmarking results.
    */
   void
-  LogThroughput(const std::vector<Worker_p> &workers) const
+  LogThroughput(const std::vector<Result_p> &results) const
   {
     size_t avg_nano_time = 0;
-    for (auto &&worker : workers) {
-      avg_nano_time += worker->GetTotalExecTime();
+    for (auto &&result : results) {
+      avg_nano_time += result->GetTotalExecTime();
     }
     avg_nano_time /= thread_num_;
 
@@ -275,10 +276,10 @@ class Benchmarker
   /**
    * @brief Compute percentiled latency and output it to stdout.
    *
-   * @param workers worker pointers that hold benchmark results.
+   * @param results benchmarking results.
    */
   void
-  LogLatency(const std::vector<Worker_p> &workers) const
+  LogLatency(const std::vector<Result_p> &results) const
   {
     std::vector<size_t> latencies;
     latencies.reserve(kMaxLatencyNum);
@@ -286,7 +287,7 @@ class Benchmarker
     // sort all execution time
     for (size_t i = 0; i < thread_num_; ++i) {
       const size_t n = (total_sample_num_ + i) / thread_num_;
-      auto &&worker_latencies = workers[i]->GetLatencies(n);
+      auto &&worker_latencies = results[i]->GetLatencies(n);
       latencies.insert(latencies.end(), worker_latencies.begin(), worker_latencies.end());
     }
     std::sort(latencies.begin(), latencies.end());
