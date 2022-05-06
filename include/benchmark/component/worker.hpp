@@ -18,11 +18,13 @@
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
 
 #include <algorithm>
+#include <memory>
 #include <random>
 #include <utility>
 #include <vector>
 
 #include "common.hpp"
+#include "measurements.hpp"
 #include "stopwatch.hpp"
 
 namespace dbgroup::benchmark::component
@@ -55,7 +57,7 @@ class Worker
       const std::vector<Operation> &&operations)
       : target_{target}, operations_{operations}
   {
-    latencies_nano_.reserve(operations_.size());
+    measurements_ = std::make_unique<Measurements>();
     target_.SetUpForWorker();
   }
 
@@ -85,15 +87,13 @@ class Worker
   void
   MeasureLatency()
   {
-    assert(latencies_nano_.empty());  // NOLINT
-
     for (auto &&operation : operations_) {
       stopwatch_.Start();
 
       target_.Execute(operation);
 
       stopwatch_.Stop();
-      latencies_nano_.emplace_back(stopwatch_.GetNanoDuration());
+      measurements_->AddLatency(stopwatch_.GetNanoDuration());
     }
   }
 
@@ -111,43 +111,19 @@ class Worker
     }
 
     stopwatch_.Stop();
-    total_exec_time_nano_ = stopwatch_.GetNanoDuration();
+    measurements_->SetTotalExecTime(stopwatch_.GetNanoDuration());
   }
 
   /**
-   * @brief Get the measured latencies.
+   * @brief Get measurement results with its ownership.
    *
-   * Note that this function performs random sampling to reduce the cost of computing
-   * percentiled latency.
-   *
-   * @param sample_num the number of desired samples.
-   * @return sampled latencies.
+   * @return measurement results.
    */
-  [[nodiscard]] auto
-  GetLatencies(const size_t sample_num) const  //
-      -> std::vector<size_t>
+  auto
+  MoveMeasurements()  //
+      -> std::unique_ptr<Measurements>
   {
-    std::uniform_int_distribution<size_t> id_engine{0, latencies_nano_.size() - 1};
-    std::mt19937_64 rand_engine{std::random_device{}()};
-
-    // perform random sampling
-    std::vector<size_t> sampled_latencies;
-    sampled_latencies.reserve(sample_num);
-    for (size_t i = 0; i < sample_num; ++i) {
-      sampled_latencies.emplace_back(latencies_nano_[id_engine(rand_engine)]);
-    }
-
-    return sampled_latencies;
-  }
-
-  /**
-   * @return total execution time.
-   */
-  [[nodiscard]] auto
-  GetTotalExecTime() const  //
-      -> size_t
-  {
-    return total_exec_time_nano_;
+    return std::move(measurements_);
   }
 
  private:
@@ -161,11 +137,8 @@ class Worker
   /// operation data to be executed by this worker
   const std::vector<Operation> operations_{};
 
-  /// total execution time [ns]
-  size_t total_exec_time_nano_{0};
-
-  /// execution time for each operation [ns]
-  std::vector<size_t> latencies_nano_{};
+  /// measurement results
+  std::unique_ptr<Measurements> measurements_{nullptr};
 
   /// a stopwatch to measure execution time
   StopWatch stopwatch_{};
