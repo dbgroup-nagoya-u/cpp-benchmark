@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <condition_variable>
 #include <future>
 #include <iomanip>
 #include <iostream>
@@ -146,49 +147,45 @@ class Benchmarker
      * Preparation of benchmark workers
      *--------------------------------------------------------------------------------*/
     Log("...Prepare workers for benchmarking.");
+    ready_for_benchmarking_ = false;
 
     std::vector<std::future<Result_p>> futures{};
 
-    {  // create a lock to stop workers from running
-      [[maybe_unused]] auto &&lock = std::unique_lock<std::shared_mutex>(mutex_1st_);
+    // create workers in each thread
+    std::mt19937_64 rand{random_seed_};
+    for (size_t i = 0; i < thread_num_; ++i) {
+      const size_t n = (total_exec_num_ + i) / thread_num_;
 
-      // create workers in each thread
-      std::mt19937_64 rand{random_seed_};
-      for (size_t i = 0; i < thread_num_; ++i) {
-        const size_t n = (total_exec_num_ + i) / thread_num_;
+      std::promise<Result_p> p{};
+      futures.emplace_back(p.get_future());
+      std::thread{&Benchmarker::RunWorker, this, std::move(p), n, rand()}.detach();
+    }
 
-        std::promise<Result_p> p{};
-        futures.emplace_back(p.get_future());
-        std::thread{&Benchmarker::RunWorker, this, std::move(p), n, rand()}.detach();
-      }
-
-      // wait for all workers to be created
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      [[maybe_unused]] auto &&guard = std::unique_lock<std::shared_mutex>(mutex_2nd_);
-    }  // unlock to run workers
+    // wait for all workers to be created
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    [[maybe_unused]] std::lock_guard s_guard{s_mtx_};
 
     /*----------------------------------------------------------------------------------
      * Measuring throughput/latency
      *--------------------------------------------------------------------------------*/
     Log("...Run workers.");
 
-    {  // create a lock to stop workers from running
-      [[maybe_unused]] auto &&lock = std::unique_lock<std::shared_mutex>(mutex_2nd_);
-
-      // wait for all workers to finish measuring throughput
-      [[maybe_unused]] auto &&guard = std::unique_lock<std::shared_mutex>(mutex_1st_);
-    }  // unlock to run workers
-
-    /*----------------------------------------------------------------------------------
-     * Output benchmarkings results
-     *--------------------------------------------------------------------------------*/
-    Log("...Finish running.");
+    {
+      std::lock_guard x_guard{x_mtx_};
+      ready_for_benchmarking_ = true;
+    }
+    cond_.notify_all();
 
     std::vector<Result_p> results{};
     results.reserve(thread_num_);
     for (auto &&future : futures) {
       results.emplace_back(future.get());
     }
+
+    /*----------------------------------------------------------------------------------
+     * Output benchmarkings results
+     *--------------------------------------------------------------------------------*/
+    Log("...Finish running.");
 
     if (measure_throughput_) {
       LogThroughput(results);
@@ -227,25 +224,25 @@ class Benchmarker
       const size_t exec_num,
       const size_t random_seed)
   {
+    // create a lock to stop a main thread
+    std::shared_lock guard{s_mtx_};
+
     // prepare a worker
     Worker_p worker{nullptr};
+    const auto &operations = ops_engine_.Generate(exec_num, random_seed);
+    worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
 
-    {  // create a lock to stop a main thread
-      [[maybe_unused]] auto &&lock = std::shared_lock<std::shared_mutex>(mutex_2nd_);
+    // unlock the shared mutex and wait other workers
+    std::unique_lock lock{x_mtx_};
+    guard.unlock();
+    cond_.wait(lock, [this] { return ready_for_benchmarking_; });
 
-      const auto &operations = ops_engine_.Generate(exec_num, random_seed);
-      worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
-    }  // unlock to notice that this worker has been created
-
-    {  // wait for benchmark to be ready
-      [[maybe_unused]] auto &&guard = std::shared_lock<std::shared_mutex>(mutex_1st_);
-
-      if (measure_throughput_) {
-        worker->MeasureThroughput();
-      } else {
-        worker->MeasureLatency();
-      }
-    }  // unlock to notice that this worker has measured thuroughput/latency
+    // start when all workers are ready for benchmarking
+    if (measure_throughput_) {
+      worker->MeasureThroughput();
+    } else {
+      worker->MeasureLatency();
+    }
 
     p.set_value_at_thread_exit(worker->MoveMeasurements());
   }
@@ -350,11 +347,17 @@ class Benchmarker
   /// an target operation generator
   OperationEngine &ops_engine_{};
 
-  /// a mutex to control workers
-  std::shared_mutex mutex_1st_{};
+  /// an exclusive mutex for waking up worker threads
+  std::mutex x_mtx_{};
 
-  /// a mutex to control workers
-  std::shared_mutex mutex_2nd_{};
+  /// a shared mutex for stopping main process
+  std::shared_mutex s_mtx_{};
+
+  /// a conditional variable for waking up worker threads
+  std::condition_variable cond_{};
+
+  /// a flag for waking up worker threads
+  bool ready_for_benchmarking_{false};
 };
 
 }  // namespace dbgroup::benchmark
