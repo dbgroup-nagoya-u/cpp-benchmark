@@ -233,9 +233,11 @@ class Benchmarker
     worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
 
     // unlock the shared mutex and wait other workers
-    std::unique_lock lock{x_mtx_};
-    guard.unlock();
-    cond_.wait(lock, [this] { return ready_for_benchmarking_; });
+    {
+      std::unique_lock lock{x_mtx_};
+      guard.unlock();
+      cond_.wait(lock, [this] { return ready_for_benchmarking_; });
+    }
 
     // start when all workers are ready for benchmarking
     if (measure_throughput_) {
