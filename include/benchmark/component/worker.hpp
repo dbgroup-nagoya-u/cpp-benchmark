@@ -18,6 +18,7 @@
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <random>
 #include <utility>
@@ -83,9 +84,10 @@ class Worker
   /**
    * @brief Measure and store execution time for each operation.
    *
+   * @param is_running a flag for monitoring benchmarker's status.
    */
   void
-  MeasureLatency()
+  MeasureLatency(const std::atomic_bool &is_running)
   {
     for (auto &&operation : operations_) {
       stopwatch_.Start();
@@ -94,23 +96,30 @@ class Worker
 
       stopwatch_.Stop();
       measurements_->AddLatency(stopwatch_.GetNanoDuration());
+
+      if (!is_running.load(std::memory_order_relaxed)) break;
     }
   }
 
   /**
    * @brief Measure and store total execution time.
    *
+   * @param is_running a flag for monitoring benchmarker's status.
    */
   void
-  MeasureThroughput()
+  MeasureThroughput(const std::atomic_bool &is_running)
   {
     stopwatch_.Start();
 
+    size_t executed_num = 0;
     for (auto &&operation : operations_) {
       target_.Execute(operation);
+      ++executed_num;
+      if (!is_running.load(std::memory_order_relaxed)) break;
     }
 
     stopwatch_.Stop();
+    measurements_->SetTotalExecNum(executed_num);
     measurements_->SetTotalExecTime(stopwatch_.GetNanoDuration());
   }
 

@@ -87,6 +87,16 @@ class Measurements
   }
 
   /**
+   * @return the total number of executed operations.
+   */
+  [[nodiscard]] auto
+  GetTotalExecNum() const  //
+      -> size_t
+  {
+    return total_exec_num_;
+  }
+
+  /**
    * @return total execution time.
    */
   [[nodiscard]] auto
@@ -94,6 +104,17 @@ class Measurements
       -> size_t
   {
     return total_exec_time_nano_;
+  }
+
+  /**
+   * @brief Set the total number of executed operations.
+   *
+   * @param total_exec_num the total number of executed operations.
+   */
+  void
+  SetTotalExecNum(const size_t total_exec_num)
+  {
+    total_exec_num_ = total_exec_num;
   }
 
   /**
@@ -122,6 +143,9 @@ class Measurements
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
+
+  /// the number of executed operations.
+  size_t total_exec_num_{0};
 
   /// total execution time [ns]
   size_t total_exec_time_nano_{0};

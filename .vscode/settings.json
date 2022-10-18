@@ -143,6 +143,12 @@
     "variant": "cpp",
     "shared_mutex": "cpp",
     "bitset": "cpp",
-    "regex": "cpp"
+    "regex": "cpp",
+    "csignal": "cpp",
+    "strstream": "cpp",
+    "complex": "cpp",
+    "cfenv": "cpp",
+    "typeindex": "cpp",
+    "valarray": "cpp"
   },
 }

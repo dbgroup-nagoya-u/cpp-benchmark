@@ -65,33 +65,43 @@ class Benchmarker
    * @brief Construct a new Benchmarker object.
    *
    * @param bench_target a reference to an actual target implementation.
+   * @param target_name the name of a benchmarking target.
    * @param ops_engine a reference to a operation generator.
-   * @param exec_num the total number of executions for benchmarking.
+   * @param exec_num the number of executions of each worker.
    * @param thread_num the number of worker threads.
    * @param random_seed a base random seed.
    * @param measure_throughput a flag for measuring throughput (true) or latency (false).
    * @param output_as_csv a flag to output benchmarking results as CSV or TEXT.
+   * @param timeout_in_sec seconds to timeout.
+   * @param target_latency a set of percentiles for measuring latency.
    */
   Benchmarker(  //
       Target &bench_target,
+      const std::string &target_name,
       OperationEngine &ops_engine,
       const size_t exec_num,
       const size_t thread_num,
       const size_t random_seed,
       const bool measure_throughput,
       const bool output_as_csv,
-      const std::string &target_name = "NO-NAME TARGET",
+      const size_t timeout_in_sec,
       const char *target_latency = kDefaultLatency)
-      : total_exec_num_{exec_num},
+      : exec_num_{exec_num},
         thread_num_{thread_num},
-        total_sample_num_{(total_exec_num_ < kMaxLatencyNum) ? total_exec_num_ : kMaxLatencyNum},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
         bench_target_{bench_target},
-        ops_engine_{ops_engine}
+        ops_engine_{ops_engine},
+        timeout_in_sec_{timeout_in_sec}
   {
     if (!measure_throughput_) {
+      // check the number of samples is valid
+      const auto total_exec_num = exec_num_ * thread_num_;
+      if (total_exec_num < kMaxLatencyNum) {
+        total_sample_num_ = total_exec_num;
+      }
+
       // prepare percentile latency
       constexpr size_t kDefaultCapacity = 32;
       target_latency_.reserve(kDefaultCapacity);
@@ -149,21 +159,27 @@ class Benchmarker
     Log("...Prepare workers for benchmarking.");
     ready_for_benchmarking_ = false;
 
-    std::vector<std::future<Result_p>> futures{};
+    std::vector<std::future<void>> prepare_futures{};
+    std::vector<std::future<Result_p>> result_futures{};
 
     // create workers in each thread
     std::mt19937_64 rand{random_seed_};
     for (size_t i = 0; i < thread_num_; ++i) {
-      const size_t n = (total_exec_num_ + i) / thread_num_;
+      // create promises to manage multi-threaded benchmarking
+      std::promise<void> pre_p{};
+      std::promise<Result_p> res_p{};
+      prepare_futures.emplace_back(pre_p.get_future());
+      result_futures.emplace_back(res_p.get_future());
 
-      std::promise<Result_p> p{};
-      futures.emplace_back(p.get_future());
-      std::thread{&Benchmarker::RunWorker, this, std::move(p), n, rand()}.detach();
+      // create a worker thread
+      std::thread t{&Benchmarker::RunWorker, this, std::move(pre_p), std::move(res_p), rand()};
+      t.detach();
     }
 
     // wait for all workers to be created
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    [[maybe_unused]] std::lock_guard s_guard{s_mtx_};
+    for (auto &&future : prepare_futures) {
+      future.get();
+    }
 
     /*----------------------------------------------------------------------------------
      * Measuring throughput/latency
@@ -178,7 +194,12 @@ class Benchmarker
 
     std::vector<Result_p> results{};
     results.reserve(thread_num_);
-    for (auto &&future : futures) {
+    for (auto &&future : result_futures) {
+      const auto status = future.wait_for(timeout_in_sec_);
+      if (status != std::future_status::ready) {
+        Log("...Interrupting workers.");
+        is_running_.store(false, std::memory_order_relaxed);
+      }
       results.emplace_back(future.get());
     }
 
@@ -214,39 +235,36 @@ class Benchmarker
   /**
    * @brief Run a worker thread to measure throughput or latency.
    *
-   * @param p a promise of a worker pointer that holds benchmarking results.
-   * @param exec_num the number of executions for this worker.
+   * @param result_p a promise for notifying a worker is prepared.
+   * @param result_p a promise of a worker pointer that holds benchmarking results.
    * @param random_seed a random seed.
    */
   void
   RunWorker(  //
-      std::promise<Result_p> p,
-      const size_t exec_num,
+      std::promise<void> prepare_p,
+      std::promise<Result_p> result_p,
       const size_t random_seed)
   {
-    // create a lock to stop a main thread
-    std::shared_lock guard{s_mtx_};
-
     // prepare a worker
     Worker_p worker{nullptr};
-    const auto &operations = ops_engine_.Generate(exec_num, random_seed);
+    const auto &operations = ops_engine_.Generate(exec_num_, random_seed);
     worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
 
-    // unlock the shared mutex and wait other workers
+    // the preparation has finished, so wait other workers
     {
       std::unique_lock lock{x_mtx_};
-      guard.unlock();
+      prepare_p.set_value();  // notify the main thread of the complete of preparation
       cond_.wait(lock, [this] { return ready_for_benchmarking_; });
     }
 
     // start when all workers are ready for benchmarking
     if (measure_throughput_) {
-      worker->MeasureThroughput();
+      worker->MeasureThroughput(is_running_);
     } else {
-      worker->MeasureLatency();
+      worker->MeasureLatency(is_running_);
     }
 
-    p.set_value_at_thread_exit(worker->MoveMeasurements());
+    result_p.set_value_at_thread_exit(worker->MoveMeasurements());
   }
 
   /**
@@ -257,13 +275,15 @@ class Benchmarker
   void
   LogThroughput(const std::vector<Result_p> &results) const
   {
+    size_t exec_num = 0;
     size_t avg_nano_time = 0;
     for (auto &&result : results) {
+      exec_num += result->GetTotalExecNum();
       avg_nano_time += result->GetTotalExecTime();
     }
     avg_nano_time /= thread_num_;
 
-    const auto throughput = total_exec_num_ / (avg_nano_time / 1E9);
+    const auto throughput = exec_num / (avg_nano_time / 1E9);
 
     if (output_as_csv_) {
       std::cout << throughput << std::endl;
@@ -322,14 +342,11 @@ class Benchmarker
    * Internal member variables
    *##################################################################################*/
 
-  /// the total number of executions for benchmarking
-  const size_t total_exec_num_{};
+  /// the number of executions of each worker
+  const size_t exec_num_{};
 
   /// the number of worker threads
   const size_t thread_num_{};
-
-  /// the total number of sampled execution time for computing percentiled latency
-  const size_t total_sample_num_{};
 
   /// a base random seed
   const size_t random_seed_{};
@@ -339,6 +356,9 @@ class Benchmarker
 
   /// a flat to output measured results as CSV or TEXT
   const bool output_as_csv_{};
+
+  /// the total number of sampled execution time for computing percentiled latency
+  size_t total_sample_num_{kMaxLatencyNum};
 
   /// targets for calculating parcentile latency
   std::vector<double> target_latency_{};
@@ -352,11 +372,14 @@ class Benchmarker
   /// an exclusive mutex for waking up worker threads
   std::mutex x_mtx_{};
 
-  /// a shared mutex for stopping main process
-  std::shared_mutex s_mtx_{};
-
   /// a conditional variable for waking up worker threads
   std::condition_variable cond_{};
+
+  /// a flag for interrupting workers.
+  std::atomic_bool is_running_{true};
+
+  /// seconds to timeout.
+  std::chrono::seconds timeout_in_sec_{};
 
   /// a flag for waking up worker threads
   bool ready_for_benchmarking_{false};
