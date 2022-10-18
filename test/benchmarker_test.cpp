@@ -62,16 +62,18 @@ class BenchmarkerFixture : public ::testing::Test
   void
   VerifyMeasureThroughput(const size_t thread_num)
   {
-    benchmarker_ = std::make_unique<Benchmarker_t>(target_, ops_engine_, kExecNum, thread_num,
-                                                   kRandomSeed, true, false);
+    benchmarker_ =
+        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
+                                        thread_num, kRandomSeed, kThroughput, kOutText, kTimeout);
     benchmarker_->Run();
   }
 
   void
   VerifyMeasureLatency(const size_t thread_num)
   {
-    benchmarker_ = std::make_unique<Benchmarker_t>(target_, ops_engine_, kExecNum, thread_num,
-                                                   kRandomSeed, false, false);
+    benchmarker_ =
+        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
+                                        thread_num, kRandomSeed, kLatency, kOutText, kTimeout);
     benchmarker_->Run();
   }
 
@@ -82,6 +84,10 @@ class BenchmarkerFixture : public ::testing::Test
 
   static constexpr size_t kExecNum = 1e6;
   static constexpr size_t kRandomSeed = 0;
+  static constexpr bool kThroughput = true;
+  static constexpr bool kLatency = false;
+  static constexpr bool kOutText = false;
+  static constexpr size_t kTimeout = 100;
 
   /*####################################################################################
    * Internal member variables

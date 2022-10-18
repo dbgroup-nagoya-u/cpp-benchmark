@@ -11,12 +11,14 @@ cppcoreguidelines-*,
 concurrency-*,
 google-*,
 hicpp-*,
+-hicpp-braces-around-statements,
 llvm-*,
 -llvm-header-guard,
 misc-*,
 -misc-non-private-member-variables-in-classes,
 modernize-*,
 readability-*,
+-readability-braces-around-statements,
 performance-*,'
 WarningsAsErrors: ''
 HeaderFilterRegex: '(include|src|test)/.*\.hpp$'

@@ -63,8 +63,9 @@ class WorkerFixture : public ::testing::Test
   void
   VerifyMeasureThroughput()
   {
+    std::atomic_bool is_running{true};
     stopwatch_.Start();
-    worker_->MeasureThroughput();
+    worker_->MeasureThroughput(is_running);
     stopwatch_.Stop();
 
     // check the total execution time is reasonable
@@ -80,8 +81,9 @@ class WorkerFixture : public ::testing::Test
   void
   VerifyMeasureLatency()
   {
+    std::atomic_bool is_running{true};
     stopwatch_.Start();
-    worker_->MeasureLatency();
+    worker_->MeasureLatency(is_running);
     stopwatch_.Stop();
 
     // check random sampling is performed
