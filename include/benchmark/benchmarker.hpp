@@ -159,19 +159,27 @@ class Benchmarker
     Log("...Prepare workers for benchmarking.");
     ready_for_benchmarking_ = false;
 
-    std::vector<std::future<Result_p>> futures{};
+    std::vector<std::future<void>> prepare_futures{};
+    std::vector<std::future<Result_p>> result_futures{};
 
     // create workers in each thread
     std::mt19937_64 rand{random_seed_};
     for (size_t i = 0; i < thread_num_; ++i) {
-      std::promise<Result_p> p{};
-      futures.emplace_back(p.get_future());
-      std::thread{&Benchmarker::RunWorker, this, std::move(p), rand()}.detach();
+      // create promises to manage multi-threaded benchmarking
+      std::promise<void> pre_p{};
+      std::promise<Result_p> res_p{};
+      prepare_futures.emplace_back(pre_p.get_future());
+      result_futures.emplace_back(res_p.get_future());
+
+      // create a worker thread
+      std::thread t{&Benchmarker::RunWorker, this, std::move(pre_p), std::move(res_p), rand()};
+      t.detach();
     }
 
     // wait for all workers to be created
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    [[maybe_unused]] std::lock_guard s_guard{s_mtx_};
+    for (auto &&future : prepare_futures) {
+      future.get();
+    }
 
     /*----------------------------------------------------------------------------------
      * Measuring throughput/latency
@@ -186,7 +194,7 @@ class Benchmarker
 
     std::vector<Result_p> results{};
     results.reserve(thread_num_);
-    for (auto &&future : futures) {
+    for (auto &&future : result_futures) {
       const auto status = future.wait_for(timeout_in_sec_);
       if (status != std::future_status::ready) {
         Log("...Interrupting workers.");
@@ -227,26 +235,25 @@ class Benchmarker
   /**
    * @brief Run a worker thread to measure throughput or latency.
    *
-   * @param p a promise of a worker pointer that holds benchmarking results.
+   * @param result_p a promise for notifying a worker is prepared.
+   * @param result_p a promise of a worker pointer that holds benchmarking results.
    * @param random_seed a random seed.
    */
   void
   RunWorker(  //
-      std::promise<Result_p> p,
+      std::promise<void> prepare_p,
+      std::promise<Result_p> result_p,
       const size_t random_seed)
   {
-    // create a lock to stop a main thread
-    std::shared_lock guard{s_mtx_};
-
     // prepare a worker
     Worker_p worker{nullptr};
     const auto &operations = ops_engine_.Generate(exec_num_, random_seed);
     worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
 
-    // unlock the shared mutex and wait other workers
+    // the preparation has finished, so wait other workers
     {
       std::unique_lock lock{x_mtx_};
-      guard.unlock();
+      prepare_p.set_value();  // notify the main thread of the complete of preparation
       cond_.wait(lock, [this] { return ready_for_benchmarking_; });
     }
 
@@ -257,7 +264,7 @@ class Benchmarker
       worker->MeasureLatency(is_running_);
     }
 
-    p.set_value_at_thread_exit(worker->MoveMeasurements());
+    result_p.set_value_at_thread_exit(worker->MoveMeasurements());
   }
 
   /**
@@ -364,9 +371,6 @@ class Benchmarker
 
   /// an exclusive mutex for waking up worker threads
   std::mutex x_mtx_{};
-
-  /// a shared mutex for stopping main process
-  std::shared_mutex s_mtx_{};
 
   /// a conditional variable for waking up worker threads
   std::condition_variable cond_{};
