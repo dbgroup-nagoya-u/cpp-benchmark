@@ -113,8 +113,7 @@ class Worker
 
     size_t executed_num = 0;
     for (auto &&operation : operations_) {
-      target_.Execute(operation);
-      ++executed_num;
+      executed_num += target_.Execute(operation);
       if (!is_running.load(std::memory_order_relaxed)) break;
     }
 
