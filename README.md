@@ -17,7 +17,7 @@ git clone --recursive git@github.com:dbgroup-nagoya-u/cpp-benchmark.git
 ### Build Options
 
 - `CPP_BENCH_BUILD_TESTS`: build unit tests for this repository if `ON` (default: `OFF`).
-- `CPP_BENCH_TEST_THREAD_NUM`: the maximum number of threads to perform unit tests (default `8`).
+- `DBGROUP_TEST_THREAD_NUM`: the maximum number of threads to perform unit tests (default `8`).
 
 ### Build and Run Unit Tests
 
