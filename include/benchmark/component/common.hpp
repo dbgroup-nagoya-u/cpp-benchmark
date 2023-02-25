@@ -17,6 +17,7 @@
 #ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_COMMON_HPP
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_COMMON_HPP
 
+// C++ standard libraries
 #include <cassert>
 #include <cstddef>
 #include <cstdint>

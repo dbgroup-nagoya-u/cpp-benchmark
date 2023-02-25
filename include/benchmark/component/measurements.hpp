@@ -17,10 +17,12 @@
 #ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
 
+// C++ standard libraries
 #include <random>
 #include <vector>
 
-#include "common.hpp"
+// local sources
+#include "benchmark/component/common.hpp"
 
 namespace dbgroup::benchmark::component
 {
@@ -42,8 +44,9 @@ class Measurements
   constexpr Measurements() = default;
 
   Measurements(const Measurements &) = default;
-  auto operator=(const Measurements &obj) -> Measurements & = default;
   Measurements(Measurements &&) = default;
+
+  auto operator=(const Measurements &obj) -> Measurements & = default;
   auto operator=(Measurements &&) -> Measurements & = default;
 
   /*####################################################################################

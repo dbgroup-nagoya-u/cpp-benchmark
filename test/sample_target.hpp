@@ -17,9 +17,11 @@
 #ifndef CPP_BENCHMARK_TEST_SAMPLE_TARGET_H_
 #define CPP_BENCHMARK_TEST_SAMPLE_TARGET_H_
 
+// C++ standard libraries
 #include <atomic>
 #include <mutex>
 
+// local sources
 #include "common.hpp"
 #include "sample_operation.hpp"
 
@@ -39,7 +41,7 @@ class SampleTarget
   {
   }
 
-  void Execute(SampleOperation ops);
+  auto Execute(SampleOperation ops) -> size_t;
 
   [[nodiscard]] auto
   GetSum() const  //
@@ -57,19 +59,25 @@ class SampleTarget
 };
 
 template <>
-inline void
-SampleTarget<std::mutex>::Execute(const SampleOperation ops)
+inline auto
+SampleTarget<std::mutex>::Execute(const SampleOperation ops)  //
+    -> size_t
 {
   const std::unique_lock<std::mutex> guard{mtx_};
 
   sum_ += ops.val;
+
+  return 1;
 }
 
 template <>
-inline void
-SampleTarget<std::atomic_size_t>::Execute(const SampleOperation ops)
+inline auto
+SampleTarget<std::atomic_size_t>::Execute(const SampleOperation ops)  //
+    -> size_t
 {
   reinterpret_cast<std::atomic_size_t*>(&sum_)->fetch_add(ops.val);  // NOLINT
+
+  return 1;
 }
 
 #endif  // CPP_BENCHMARK_TEST_SAMPLE_TARGET_H_

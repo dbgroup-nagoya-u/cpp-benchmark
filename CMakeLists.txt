@@ -13,24 +13,23 @@ project(
   LANGUAGES "CXX"
 )
 
-# define source directories
-set(CPP_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-
 #--------------------------------------------------------------------------------------#
 # Build library
 #--------------------------------------------------------------------------------------#
 
-if(NOT TARGET cpp_bench::cpp_bench)
-  add_library(cpp_bench INTERFACE)
-  add_library(cpp_bench::cpp_bench ALIAS cpp_bench)
-  target_compile_features(cpp_bench INTERFACE
+if(NOT TARGET dbgroup::${PROJECT_NAME})
+  find_package(Threads)
+
+  add_library(${PROJECT_NAME} INTERFACE)
+  add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+  target_compile_features(${PROJECT_NAME} INTERFACE
     "cxx_std_17"
   )
-  target_include_directories(cpp_bench INTERFACE
-    "${CPP_BENCH_SOURCE_DIR}/include"
+  target_include_directories(${PROJECT_NAME} INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
   )
-  target_link_libraries(cpp_bench INTERFACE
-    pthread
+  target_link_libraries(${PROJECT_NAME} INTERFACE
+    Threads::Threads
   )
 endif()
 
@@ -40,8 +39,6 @@ endif()
 
 option(CPP_BENCH_BUILD_TESTS "Build unit tests" OFF)
 if(${CPP_BENCH_BUILD_TESTS})
-  # enable CTest
   enable_testing()
-  # include unit tests
   add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/test")
 endif()

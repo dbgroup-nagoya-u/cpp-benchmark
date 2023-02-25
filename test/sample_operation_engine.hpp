@@ -17,8 +17,10 @@
 #ifndef CPP_BENCHMARK_TEST_SAMPLE_OPERATION_ENGINE_H_
 #define CPP_BENCHMARK_TEST_SAMPLE_OPERATION_ENGINE_H_
 
+// C++ standard libraries
 #include <vector>
 
+// local sources
 #include "common.hpp"
 #include "sample_operation.hpp"
 

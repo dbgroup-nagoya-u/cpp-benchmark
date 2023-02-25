@@ -17,6 +17,7 @@
 #ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
 #define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
 
+// C++ standard libraries
 #include <algorithm>
 #include <chrono>
 #include <condition_variable>
@@ -33,8 +34,9 @@
 #include <utility>
 #include <vector>
 
-#include "component/common.hpp"
-#include "component/worker.hpp"
+// local sources
+#include "benchmark/component/common.hpp"
+#include "benchmark/component/worker.hpp"
 
 namespace dbgroup::benchmark
 {
@@ -128,8 +130,9 @@ class Benchmarker
   }
 
   Benchmarker(const Benchmarker &) = delete;
-  auto operator=(const Benchmarker &obj) -> Benchmarker & = delete;
   Benchmarker(Benchmarker &&) = delete;
+
+  auto operator=(const Benchmarker &obj) -> Benchmarker & = delete;
   auto operator=(Benchmarker &&) -> Benchmarker & = delete;
 
   /*####################################################################################
