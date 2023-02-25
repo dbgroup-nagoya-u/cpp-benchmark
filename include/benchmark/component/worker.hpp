@@ -17,6 +17,7 @@
 #ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
 
+// C++ standard libraries
 #include <algorithm>
 #include <atomic>
 #include <memory>
@@ -24,9 +25,10 @@
 #include <utility>
 #include <vector>
 
-#include "common.hpp"
-#include "measurements.hpp"
-#include "stopwatch.hpp"
+// local sources
+#include "benchmark/component/common.hpp"
+#include "benchmark/component/measurements.hpp"
+#include "benchmark/component/stopwatch.hpp"
 
 namespace dbgroup::benchmark::component
 {
@@ -63,8 +65,9 @@ class Worker
   }
 
   Worker(const Worker &) = delete;
-  auto operator=(const Worker &obj) -> Worker & = delete;
   Worker(Worker &&) noexcept = default;
+
+  auto operator=(const Worker &obj) -> Worker & = delete;
   auto operator=(Worker &&) noexcept -> Worker & = default;
 
   /*####################################################################################

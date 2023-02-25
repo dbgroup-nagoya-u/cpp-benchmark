@@ -17,9 +17,11 @@
 #ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_STOPWATCH_HPP
 
+// C++ standard libraries
 #include <chrono>
 
-#include "common.hpp"
+// local sources
+#include "benchmark/component/common.hpp"
 
 namespace dbgroup::benchmark::component
 {
@@ -47,8 +49,9 @@ class StopWatch
   constexpr StopWatch() = default;
 
   constexpr StopWatch(const StopWatch &) = default;
-  constexpr auto operator=(const StopWatch &obj) -> StopWatch & = default;
   constexpr StopWatch(StopWatch &&) = default;
+
+  constexpr auto operator=(const StopWatch &obj) -> StopWatch & = default;
   constexpr auto operator=(StopWatch &&) -> StopWatch & = default;
 
   /*####################################################################################

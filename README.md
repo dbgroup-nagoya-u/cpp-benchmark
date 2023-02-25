@@ -11,7 +11,7 @@ Note: this is a header only library. You can use this without pre-build.
 ```bash
 sudo apt update && sudo apt install -y build-essential cmake
 cd <path_to_your_workspace>
-git clone --recursive git@github.com:dbgroup-nagoya-u/cpp-benchmark.git
+git clone git@github.com:dbgroup-nagoya-u/cpp-benchmark.git
 ```
 
 ### Build Options

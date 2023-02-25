@@ -16,16 +16,18 @@
 
 #include "benchmark/benchmarker.hpp"
 
+// C++ standard libraries
 #include <memory>
 
+// external sources
+#include "gtest/gtest.h"
+
+// local sources
 #include "benchmark/component/stopwatch.hpp"
 #include "benchmark/component/worker.hpp"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
-
-// use GoogleTest for unit testing
-#include "gtest/gtest.h"
 
 namespace dbgroup::benchmark::test
 {

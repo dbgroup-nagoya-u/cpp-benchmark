@@ -17,14 +17,11 @@
 #ifndef CPP_BENCHMARK_TEST_COMMON_H_
 #define CPP_BENCHMARK_TEST_COMMON_H_
 
+// C++ standard libraries
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 
-#ifdef CPP_BENCH_TEST_THREAD_NUM
-static constexpr size_t kThreadNum = CPP_BENCH_TEST_THREAD_NUM;
-#else
-static constexpr size_t kThreadNum = 8;
-#endif
+static constexpr size_t kThreadNum = DBGROUP_TEST_THREAD_NUM;
 
 #endif  // CPP_BENCHMARK_TEST_COMMON_H_
