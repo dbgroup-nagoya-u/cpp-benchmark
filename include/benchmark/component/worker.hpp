@@ -35,8 +35,8 @@ namespace dbgroup::benchmark::component
 /**
  * @brief A class of a worker thread for benchmarking.
  *
- * This class acts as a utility wrapper for benchmarking. Actual processin is performed
- * by the Target class.
+ * This class acts as a utility wrapper for benchmarking. Actual processing is
+ * performed by the Target class.
  *
  * @tparam Target An actual target implementation.
  * @tparam Operation A struct to perform each operation.
@@ -45,9 +45,9 @@ template <class Target, class Operation>
 class Worker
 {
  public:
-  /*####################################################################################
+  /*############################################################################
    * Public constructors/destructors
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Construct a new Worker object.
@@ -70,9 +70,9 @@ class Worker
   auto operator=(const Worker &obj) -> Worker & = delete;
   auto operator=(Worker &&) noexcept -> Worker & = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public destructors
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Destroy the Worker object.
@@ -80,9 +80,9 @@ class Worker
    */
   ~Worker() { target_.TearDownForWorker(); }
 
-  /*####################################################################################
+  /*############################################################################
    * Public utility functions
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Measure and store execution time for each operation.
@@ -138,9 +138,9 @@ class Worker
   }
 
  private:
-  /*####################################################################################
+  /*############################################################################
    * Internal member variables
-   *##################################################################################*/
+   *##########################################################################*/
 
   /// a benchmark target
   Target &target_{};

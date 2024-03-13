@@ -33,9 +33,9 @@ namespace dbgroup::benchmark::component
 class Measurements
 {
  public:
-  /*####################################################################################
+  /*############################################################################
    * Public constructors and assignment operators
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Create a new Measurements object.
@@ -49,9 +49,9 @@ class Measurements
   auto operator=(const Measurements &obj) -> Measurements & = default;
   auto operator=(Measurements &&) -> Measurements & = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public destructors
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Destroy the Measurements object.
@@ -59,15 +59,15 @@ class Measurements
    */
   ~Measurements() = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public utility functions
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Get the measured latencies.
    *
-   * Note that this function performs random sampling to reduce the cost of computing
-   * percentiled latency.
+   * Note that this function performs random sampling to reduce the cost of
+   * computing percentiled latency.
    *
    * @param sample_num the number of desired samples.
    * @return sampled latencies.
@@ -143,9 +143,9 @@ class Measurements
   }
 
  private:
-  /*####################################################################################
+  /*############################################################################
    * Internal member variables
-   *##################################################################################*/
+   *##########################################################################*/
 
   /// the number of executed operations.
   size_t total_exec_num_{0};
