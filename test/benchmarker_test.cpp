@@ -17,14 +17,15 @@
 #include "benchmark/benchmarker.hpp"
 
 // C++ standard libraries
+#include <atomic>
+#include <cstddef>
 #include <memory>
+#include <mutex>
 
 // external sources
 #include "gtest/gtest.h"
 
 // local sources
-#include "benchmark/component/stopwatch.hpp"
-#include "benchmark/component/worker.hpp"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
@@ -43,6 +44,18 @@ class BenchmarkerFixture : public ::testing::Test
   using Benchmarker_t = Benchmarker<Target_t, SampleOperation, SampleOperationEngine>;
 
  protected:
+  /*############################################################################
+   * Constants
+   *##########################################################################*/
+
+  static constexpr size_t kExecNum = 1e6;
+  static constexpr size_t kRandomSeed = 0;
+  static constexpr bool kThroughput = true;
+  static constexpr bool kLatency = false;
+  static constexpr bool kOutText = false;
+  static constexpr size_t kTimeout = 100;
+  static constexpr size_t kThreadNum = DBGROUP_TEST_THREAD_NUM;
+
   /*############################################################################
    * Setup/Teardown
    *##########################################################################*/
@@ -83,17 +96,6 @@ class BenchmarkerFixture : public ::testing::Test
 
  private:
   /*############################################################################
-   * Internal constants
-   *##########################################################################*/
-
-  static constexpr size_t kExecNum = 1e6;
-  static constexpr size_t kRandomSeed = 0;
-  static constexpr bool kThroughput = true;
-  static constexpr bool kLatency = false;
-  static constexpr bool kOutText = false;
-  static constexpr size_t kTimeout = 100;
-
-  /*############################################################################
    * Internal member variables
    *##########################################################################*/
 
@@ -127,12 +129,12 @@ TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithSingleWorkerSucceed)
 
 TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithMultiWorkersSucceed)
 {
-  TestFixture::VerifyMeasureThroughput(kThreadNum);
+  TestFixture::VerifyMeasureThroughput(TestFixture::kThreadNum);
 }
 
 TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithMultiWorkersSucceed)
 {
-  TestFixture::VerifyMeasureLatency(kThreadNum);
+  TestFixture::VerifyMeasureLatency(TestFixture::kThreadNum);
 }
 
 }  // namespace dbgroup::benchmark::test

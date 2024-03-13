@@ -19,23 +19,23 @@
 
 // C++ standard libraries
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <future>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 #include <memory>
 #include <mutex>
 #include <random>
-#include <shared_mutex>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
 
 // local sources
-#include "benchmark/component/common.hpp"
+#include "benchmark/component/measurements.hpp"
 #include "benchmark/component/worker.hpp"
 
 namespace dbgroup::benchmark

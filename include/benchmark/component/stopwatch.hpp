@@ -19,9 +19,7 @@
 
 // C++ standard libraries
 #include <chrono>
-
-// local sources
-#include "benchmark/component/common.hpp"
+#include <cstddef>
 
 namespace dbgroup::benchmark::component
 {

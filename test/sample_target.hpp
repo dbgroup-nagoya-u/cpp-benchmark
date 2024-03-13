@@ -19,10 +19,10 @@
 
 // C++ standard libraries
 #include <atomic>
+#include <cstddef>
 #include <mutex>
 
 // local sources
-#include "common.hpp"
 #include "sample_operation.hpp"
 
 template <class Implementation>

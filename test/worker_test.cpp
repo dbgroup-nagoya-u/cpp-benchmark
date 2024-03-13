@@ -17,13 +17,17 @@
 #include "benchmark/component/worker.hpp"
 
 // C++ standard libraries
+#include <atomic>
+#include <cstddef>
 #include <memory>
 
 // external sources
 #include "gtest/gtest.h"
 
-// local sources
+// library headers
 #include "benchmark/component/stopwatch.hpp"
+
+// local sources
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"

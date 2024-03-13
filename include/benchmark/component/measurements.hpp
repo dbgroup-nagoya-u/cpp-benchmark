@@ -18,11 +18,9 @@
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
 
 // C++ standard libraries
+#include <cstddef>
 #include <random>
 #include <vector>
-
-// local sources
-#include "benchmark/component/common.hpp"
 
 namespace dbgroup::benchmark::component
 {

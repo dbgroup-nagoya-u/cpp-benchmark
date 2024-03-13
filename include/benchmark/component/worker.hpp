@@ -18,15 +18,14 @@
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
 
 // C++ standard libraries
-#include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <memory>
 #include <random>
 #include <utility>
 #include <vector>
 
 // local sources
-#include "benchmark/component/common.hpp"
 #include "benchmark/component/measurements.hpp"
 #include "benchmark/component/stopwatch.hpp"
 
