@@ -36,7 +36,7 @@ namespace dbgroup::benchmark::component
  * @brief A class of a worker thread for benchmarking.
  *
  * This class acts as a utility wrapper for benchmarking. Actual processing is
- * performed by the Target class.
+ * performed by the `Target` class.
  *
  * @tparam Target An actual target implementation.
  * @tparam Operation A struct to perform each operation.
@@ -52,8 +52,8 @@ class Worker
   /**
    * @brief Construct a new Worker object.
    *
-   * @param target a referene to a target implementation.
-   * @param operations operation data to be performed by this worker.
+   * @param target A referene to a target implementation.
+   * @param operations Operation data to be performed by this worker.
    */
   Worker(  //
       Target &target,
@@ -87,7 +87,7 @@ class Worker
   /**
    * @brief Measure and store execution time for each operation.
    *
-   * @param is_running a flag for monitoring benchmarker's status.
+   * @param is_running A flag for monitoring benchmarker's status.
    */
   void
   MeasureLatency(const std::atomic_bool &is_running)
@@ -107,7 +107,7 @@ class Worker
   /**
    * @brief Measure and store total execution time.
    *
-   * @param is_running a flag for monitoring benchmarker's status.
+   * @param is_running A flag for monitoring benchmarker's status.
    */
   void
   MeasureThroughput(const std::atomic_bool &is_running)
@@ -128,7 +128,7 @@ class Worker
   /**
    * @brief Get measurement results with its ownership.
    *
-   * @return measurement results.
+   * @return Measurement results.
    */
   auto
   MoveMeasurements()  //
@@ -142,16 +142,16 @@ class Worker
    * Internal member variables
    *##########################################################################*/
 
-  /// a benchmark target
+  /// @brief A benchmark target.
   Target &target_{};
 
-  /// operation data to be executed by this worker
+  /// @brief Operation data to be executed by this worker.
   const std::vector<Operation> operations_{};
 
-  /// measurement results
+  /// @brief Measurement results.
   std::unique_ptr<Measurements> measurements_{nullptr};
 
-  /// a stopwatch to measure execution time
+  /// @brief A stopwatch to measure execution time.
   StopWatch stopwatch_{};
 };
 

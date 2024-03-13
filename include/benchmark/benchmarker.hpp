@@ -66,16 +66,16 @@ class Benchmarker
   /**
    * @brief Construct a new Benchmarker object.
    *
-   * @param bench_target a reference to an actual target implementation.
-   * @param target_name the name of a benchmarking target.
-   * @param ops_engine a reference to a operation generator.
-   * @param exec_num the number of executions of each worker.
-   * @param thread_num the number of worker threads.
-   * @param random_seed a base random seed.
-   * @param measure_throughput a flag for measuring throughput (true) or latency (false).
-   * @param output_as_csv a flag to output benchmarking results as CSV or TEXT.
-   * @param timeout_in_sec seconds to timeout.
-   * @param target_latency a set of percentiles for measuring latency.
+   * @param bench_target A reference to an actual target implementation.
+   * @param target_name The name of a benchmarking target.
+   * @param ops_engine A reference to a operation generator.
+   * @param exec_num The number of executions of each worker.
+   * @param thread_num The number of worker threads.
+   * @param random_seed A base random seed.
+   * @param measure_throughput A flag for measuring throughput (true) or latency (false).
+   * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
+   * @param timeout_in_sec Seconds to timeout.
+   * @param target_latency A set of percentiles for measuring latency.
    */
   Benchmarker(  //
       Target &bench_target,
@@ -223,10 +223,10 @@ class Benchmarker
    * Internal constants
    *##########################################################################*/
 
-  /// limit the target of latency calculation
+  /// @brief Limit the target of latency calculation.
   static constexpr size_t kMaxLatencyNum = 1e6;
 
-  /// targets for calculating parcentile latency
+  /// @brief Targets for calculating parcentile latency.
   static constexpr auto kDefaultLatency =
       "0.01,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,"
       "0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,0.99";
@@ -238,9 +238,9 @@ class Benchmarker
   /**
    * @brief Run a worker thread to measure throughput or latency.
    *
-   * @param result_p a promise for notifying a worker is prepared.
-   * @param result_p a promise of a worker pointer that holds benchmarking results.
-   * @param random_seed a random seed.
+   * @param result_p A promise for notifying a worker is prepared.
+   * @param result_p A promise of a worker pointer that holds benchmarking results.
+   * @param random_seed A random seed.
    */
   void
   RunWorker(  //
@@ -316,9 +316,8 @@ class Benchmarker
 
     Log("Percentiled Latency [ns]:");
     for (auto &&percentile : target_latency_) {
-      const size_t percentiled_idx =
-          (percentile == 1.0) ? latencies.size() - 1 : latencies.size() * percentile;  // NOLINT
-
+      const size_t percentiled_idx = (percentile == 1.0) ? latencies.size() - 1  //
+                                                         : latencies.size() * percentile;
       if (!output_as_csv_) {
         std::cout << "  " << std::fixed << std::setprecision(2) << percentile << ": ";
       } else {
@@ -331,7 +330,7 @@ class Benchmarker
   /**
    * @brief Log a message to stdout if the output mode is `text`.
    *
-   * @param message an output message
+   * @param message An output message.
    */
   void
   Log(const std::string &message) const
@@ -345,46 +344,46 @@ class Benchmarker
    * Internal member variables
    *##########################################################################*/
 
-  /// the number of executions of each worker
+  /// @brief The number of executions of each worker.
   const size_t exec_num_{};
 
-  /// the number of worker threads
+  /// @brief The number of worker threads.
   const size_t thread_num_{};
 
-  /// a base random seed
+  /// @brief A base random seed.
   const size_t random_seed_{};
 
-  /// a flag to measure throughput (if true) or latency (if false)
+  /// @brief A flag to measure throughput (if true) or latency (if false).
   const bool measure_throughput_{};
 
-  /// a flat to output measured results as CSV or TEXT
+  /// @brief A flat to output measured results as CSV or TXT.
   const bool output_as_csv_{};
 
-  /// the total number of sampled execution time for computing percentiled latency
+  /// @brief The total number of sampled execution time for computing percentiled latency.
   size_t total_sample_num_{kMaxLatencyNum};
 
-  /// targets for calculating parcentile latency
+  /// @brief Targets for calculating parcentile latency.
   std::vector<double> target_latency_{};
 
-  /// a benchmaring target
+  /// @brief A benchmaring target.
   Target &bench_target_{};
 
-  /// an target operation generator
+  /// @brief An target operation generator.
   OperationEngine &ops_engine_{};
 
-  /// an exclusive mutex for waking up worker threads
+  /// @brief An exclusive mutex for waking up worker threads.
   std::mutex x_mtx_{};
 
-  /// a conditional variable for waking up worker threads
+  /// @brief A conditional variable for waking up worker threads.
   std::condition_variable cond_{};
 
-  /// a flag for interrupting workers.
+  /// @brief A flag for interrupting workers.
   std::atomic_bool is_running_{true};
 
-  /// seconds to timeout.
+  /// @brief Seconds to timeout.
   std::chrono::seconds timeout_in_sec_{};
 
-  /// a flag for waking up worker threads
+  /// @brief A flag for waking up worker threads.
   bool ready_for_benchmarking_{false};
 };
 

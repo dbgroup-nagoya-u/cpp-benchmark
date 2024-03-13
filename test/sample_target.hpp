@@ -51,10 +51,10 @@ class SampleTarget
   }
 
  private:
-  /// target data
+  /// @brief Target data
   size_t sum_{0};
 
-  /// mutex for lock-based incrementor
+  /// @brief Mutex for lock-based incrementor
   std::mutex mtx_{};
 };
 

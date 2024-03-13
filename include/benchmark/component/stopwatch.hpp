@@ -91,10 +91,9 @@ class StopWatch
   /**
    * @brief Get a measured time duration.
    *
-   * If Start and Stop functions are not called previously, the return value is
-   * undefined.
-   *
-   * @return a measured time duration [ns].
+   * @return A measured time duration [ns].
+   * @note If the `Start` and `Stop` functions are not called previously, the
+   * return value is undefined.
    */
   [[nodiscard]] constexpr auto
   GetNanoDuration() const  //
@@ -108,10 +107,10 @@ class StopWatch
    * Internal member variables
    *##########################################################################*/
 
-  /// a starting timestamp
+  /// @brief A starting timestamp.
   Clock_t::time_point start_time_{};
 
-  /// an end timestamp
+  /// @brief An end timestamp.
   Clock_t::time_point end_time_{};
 };
 
