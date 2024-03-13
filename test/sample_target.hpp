@@ -41,7 +41,8 @@ class SampleTarget
   {
   }
 
-  auto Execute(SampleOperation ops) -> size_t;
+  auto Execute(  //
+      SampleOperation ops) -> size_t;
 
   [[nodiscard]] auto
   GetSum() const  //
@@ -60,7 +61,8 @@ class SampleTarget
 
 template <>
 inline auto
-SampleTarget<std::mutex>::Execute(const SampleOperation ops)  //
+SampleTarget<std::mutex>::Execute(  //
+    const SampleOperation ops)      //
     -> size_t
 {
   const std::unique_lock<std::mutex> guard{mtx_};
@@ -72,7 +74,8 @@ SampleTarget<std::mutex>::Execute(const SampleOperation ops)  //
 
 template <>
 inline auto
-SampleTarget<std::atomic_size_t>::Execute(const SampleOperation ops)  //
+SampleTarget<std::atomic_size_t>::Execute(  //
+    const SampleOperation ops)              //
     -> size_t
 {
   reinterpret_cast<std::atomic_size_t*>(&sum_)->fetch_add(ops.val);  // NOLINT

@@ -276,7 +276,8 @@ class Benchmarker
    * @param results benchmarking results.
    */
   void
-  LogThroughput(const std::vector<Result_p> &results) const
+  LogThroughput(  //
+      const std::vector<Result_p> &results) const
   {
     size_t exec_num = 0;
     size_t avg_nano_time = 0;
@@ -301,7 +302,8 @@ class Benchmarker
    * @param results benchmarking results.
    */
   void
-  LogLatency(const std::vector<Result_p> &results) const
+  LogLatency(  //
+      const std::vector<Result_p> &results) const
   {
     std::vector<size_t> latencies;
     latencies.reserve(kMaxLatencyNum);
@@ -333,7 +335,8 @@ class Benchmarker
    * @param message An output message.
    */
   void
-  Log(const std::string &message) const
+  Log(  //
+      const std::string &message) const
   {
     if (!output_as_csv_) {
       std::cout << message << std::endl;

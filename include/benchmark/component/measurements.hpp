@@ -72,7 +72,8 @@ class Measurements
    * computing percentile latency.
    */
   [[nodiscard]] auto
-  GetLatencies(const size_t sample_num) const  //
+  GetLatencies(                       //
+      const size_t sample_num) const  //
       -> std::vector<size_t>
   {
     std::uniform_int_distribution<size_t> id_engine{0, latencies_nano_.size() - 1};
@@ -114,7 +115,8 @@ class Measurements
    * @param total_exec_num The total number of executed operations.
    */
   void
-  SetTotalExecNum(const size_t total_exec_num)
+  SetTotalExecNum(  //
+      const size_t total_exec_num)
   {
     total_exec_num_ = total_exec_num;
   }
@@ -125,7 +127,8 @@ class Measurements
    * @param total_exec_time_nano A total execution time [ns].
    */
   void
-  SetTotalExecTime(const size_t total_exec_time_nano)
+  SetTotalExecTime(  //
+      const size_t total_exec_time_nano)
   {
     total_exec_time_nano_ = total_exec_time_nano;
   }
@@ -136,7 +139,8 @@ class Measurements
    * @param latency_nano A measured latency [ns].
    */
   void
-  AddLatency(const size_t latency_nano)
+  AddLatency(  //
+      const size_t latency_nano)
   {
     latencies_nano_.emplace_back(latency_nano);
   }

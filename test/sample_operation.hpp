@@ -25,7 +25,11 @@ class SampleOperation
  public:
   constexpr SampleOperation() = default;
 
-  explicit constexpr SampleOperation(const size_t val) : val{val} {}
+  explicit constexpr SampleOperation(  //
+      const size_t val)
+      : val{val}
+  {
+  }
 
   size_t val{0};
 };

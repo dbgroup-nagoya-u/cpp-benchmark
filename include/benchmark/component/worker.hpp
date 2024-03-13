@@ -90,7 +90,8 @@ class Worker
    * @param is_running A flag for monitoring benchmarker's status.
    */
   void
-  MeasureLatency(const std::atomic_bool &is_running)
+  MeasureLatency(  //
+      const std::atomic_bool &is_running)
   {
     for (auto &&operation : operations_) {
       stopwatch_.Start();
@@ -110,7 +111,8 @@ class Worker
    * @param is_running A flag for monitoring benchmarker's status.
    */
   void
-  MeasureThroughput(const std::atomic_bool &is_running)
+  MeasureThroughput(  //
+      const std::atomic_bool &is_running)
   {
     stopwatch_.Start();
 

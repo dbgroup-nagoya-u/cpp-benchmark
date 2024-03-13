@@ -62,7 +62,8 @@ class BenchmarkerFixture : public ::testing::Test
    *##########################################################################*/
 
   void
-  VerifyMeasureThroughput(const size_t thread_num)
+  VerifyMeasureThroughput(  //
+      const size_t thread_num)
   {
     benchmarker_ =
         std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
@@ -71,7 +72,8 @@ class BenchmarkerFixture : public ::testing::Test
   }
 
   void
-  VerifyMeasureLatency(const size_t thread_num)
+  VerifyMeasureLatency(  //
+      const size_t thread_num)
   {
     benchmarker_ =
         std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
