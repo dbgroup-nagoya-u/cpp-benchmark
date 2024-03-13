@@ -1,25 +1,23 @@
-name: Ubuntu-20.04
+name: Unit Tests
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
 
 env:
   BUILD_TYPE: Release
 
 jobs:
   unit_test:
-    runs-on: ubuntu-20.04
-    steps:
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 10
 
+    steps:
     - name: Clone Main Repository
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-        ssh-key: ${{secrets.SSH_KEY_FOR_ACTIONS}}
-        persist-credentials: false
+      uses: actions/checkout@v4
 
     - name: Create Build Environment
       shell: bash
@@ -29,14 +27,17 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCPP_BENCH_BUILD_TESTS=on -DDBGROUP_TEST_THREAD_NUM=2
+      run: >
+        cmake $GITHUB_WORKSPACE
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+        -DCPP_BENCH_BUILD_TESTS=ON
 
     - name: Build
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake --build . --parallel 2 --config $BUILD_TYPE
+      run: cmake --build . --parallel --config ${BUILD_TYPE}
 
     - name: Test
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: ctest -C $BUILD_TYPE
+      run: ctest -C ${BUILD_TYPE} --output-on-failure
