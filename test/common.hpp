@@ -22,6 +22,4 @@
 #include <cstddef>
 #include <cstdint>
 
-static constexpr size_t kThreadNum = DBGROUP_TEST_THREAD_NUM;
-
 #endif  // CPP_BENCHMARK_TEST_COMMON_H_

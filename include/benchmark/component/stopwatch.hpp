@@ -19,9 +19,7 @@
 
 // C++ standard libraries
 #include <chrono>
-
-// local sources
-#include "benchmark/component/common.hpp"
+#include <cstddef>
 
 namespace dbgroup::benchmark::component
 {
@@ -31,16 +29,16 @@ namespace dbgroup::benchmark::component
  */
 class StopWatch
 {
-  /*####################################################################################
+  /*############################################################################
    * Type aliases
-   *##################################################################################*/
+   *##########################################################################*/
 
   using Clock_t = ::std::chrono::high_resolution_clock;
 
  public:
-  /*####################################################################################
+  /*############################################################################
    * Public constructors and assignment operators
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Create a new StopWatch object.
@@ -54,9 +52,9 @@ class StopWatch
   constexpr auto operator=(const StopWatch &obj) -> StopWatch & = default;
   constexpr auto operator=(StopWatch &&) -> StopWatch & = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public destructors
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Destroy the StopWatch object.
@@ -64,9 +62,9 @@ class StopWatch
    */
   ~StopWatch() = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public functions
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Start this stopwatch to measure time duration.
@@ -91,10 +89,9 @@ class StopWatch
   /**
    * @brief Get a measured time duration.
    *
-   * If Start and Stop functions are not called previously, the return value is
-   * undefined.
-   *
-   * @return a measured time duration [ns].
+   * @return A measured time duration [ns].
+   * @note If the `Start` and `Stop` functions are not called previously, the
+   * return value is undefined.
    */
   [[nodiscard]] constexpr auto
   GetNanoDuration() const  //
@@ -104,14 +101,14 @@ class StopWatch
   }
 
  private:
-  /*####################################################################################
+  /*############################################################################
    * Internal member variables
-   *##################################################################################*/
+   *##########################################################################*/
 
-  /// a starting timestamp
+  /// @brief A starting timestamp.
   Clock_t::time_point start_time_{};
 
-  /// an end timestamp
+  /// @brief An end timestamp.
   Clock_t::time_point end_time_{};
 };
 

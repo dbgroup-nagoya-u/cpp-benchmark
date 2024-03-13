@@ -1,28 +1,28 @@
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 # Configure GoogleTest
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
 include(FetchContent)
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY "https://github.com/google/googletest.git"
-  GIT_TAG "58d77fa8070e8cec2dc1ed015d66b454c8d78850" # v1.12.1
+  GIT_TAG "f8d7d77c06936315286eb55f8de22cd23c188571" # v1.14.0
 )
 FetchContent_MakeAvailable(googletest)
 
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 # Configurations for unit tests
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
 set(
   DBGROUP_TEST_THREAD_NUM
-  "8" CACHE STRING
+  "2" CACHE STRING
   "The number of worker threads for testing."
 )
 
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 # Build Unit Tests
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
   # define function to add unit tests in the same format
 function(ADD_DBGROUP_TEST DBGROUP_TEST_TARGET)
@@ -43,7 +43,7 @@ function(ADD_DBGROUP_TEST DBGROUP_TEST_TARGET)
     DBGROUP_TEST_THREAD_NUM=${DBGROUP_TEST_THREAD_NUM}
   )
   target_link_libraries(${DBGROUP_TEST_TARGET} PRIVATE
-    dbgroup::cpp_bench
+    dbgroup::${PROJECT_NAME}
     GTest::gtest_main
   )
   add_test(NAME ${DBGROUP_TEST_TARGET} COMMAND $<TARGET_FILE:${DBGROUP_TEST_TARGET}>)

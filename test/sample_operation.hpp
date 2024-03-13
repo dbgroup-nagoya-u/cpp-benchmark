@@ -17,15 +17,19 @@
 #ifndef CPP_BENCHMARK_TEST_SAMPLE_OPERATION_H_
 #define CPP_BENCHMARK_TEST_SAMPLE_OPERATION_H_
 
-// local sources
-#include "common.hpp"
+// C++ standard libraries
+#include <cstddef>
 
 class SampleOperation
 {
  public:
   constexpr SampleOperation() = default;
 
-  explicit constexpr SampleOperation(const size_t val) : val{val} {}
+  explicit constexpr SampleOperation(  //
+      const size_t val)
+      : val{val}
+  {
+  }
 
   size_t val{0};
 };

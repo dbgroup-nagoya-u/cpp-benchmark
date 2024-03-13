@@ -8,17 +8,21 @@ endif()
 # project information
 project(
   cpp_bench
-  VERSION "1.1.1"
+  VERSION "1.2.0"
   DESCRIPTION "A benchmarker library for C++ language."
   LANGUAGES "CXX"
 )
 
-#--------------------------------------------------------------------------------------#
-# Build library
-#--------------------------------------------------------------------------------------#
-
 if(NOT TARGET dbgroup::${PROJECT_NAME})
+  #----------------------------------------------------------------------------#
+  # Configure system libraries
+  #----------------------------------------------------------------------------#
+
   find_package(Threads)
+
+  #----------------------------------------------------------------------------#
+  # Build target
+  #----------------------------------------------------------------------------#
 
   add_library(${PROJECT_NAME} INTERFACE)
   add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
@@ -31,14 +35,14 @@ if(NOT TARGET dbgroup::${PROJECT_NAME})
   target_link_libraries(${PROJECT_NAME} INTERFACE
     Threads::Threads
   )
-endif()
 
-#--------------------------------------------------------------------------------------#
-# Build unit tests
-#--------------------------------------------------------------------------------------#
+  #----------------------------------------------------------------------------#
+  # Build unit tests
+  #----------------------------------------------------------------------------#
 
-option(CPP_BENCH_BUILD_TESTS "Build unit tests" OFF)
-if(${CPP_BENCH_BUILD_TESTS})
-  enable_testing()
-  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/test")
+  option(CPP_BENCH_BUILD_TESTS "Build unit tests" OFF)
+  if(${CPP_BENCH_BUILD_TESTS})
+    enable_testing()
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/test")
+  endif()
 endif()

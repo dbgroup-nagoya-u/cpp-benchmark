@@ -17,14 +17,15 @@
 #include "benchmark/benchmarker.hpp"
 
 // C++ standard libraries
+#include <atomic>
+#include <cstddef>
 #include <memory>
+#include <mutex>
 
 // external sources
 #include "gtest/gtest.h"
 
 // local sources
-#include "benchmark/component/stopwatch.hpp"
-#include "benchmark/component/worker.hpp"
 #include "sample_operation.hpp"
 #include "sample_operation_engine.hpp"
 #include "sample_target.hpp"
@@ -34,18 +35,30 @@ namespace dbgroup::benchmark::test
 template <class Implementation>
 class BenchmarkerFixture : public ::testing::Test
 {
-  /*####################################################################################
+  /*############################################################################
    * Type aliases
-   *##################################################################################*/
+   *##########################################################################*/
 
   using Target_t = SampleTarget<Implementation>;
   using Worker_t = component::Worker<Target_t, SampleOperation>;
   using Benchmarker_t = Benchmarker<Target_t, SampleOperation, SampleOperationEngine>;
 
  protected:
-  /*####################################################################################
+  /*############################################################################
+   * Constants
+   *##########################################################################*/
+
+  static constexpr size_t kExecNum = 1e6;
+  static constexpr size_t kRandomSeed = 0;
+  static constexpr bool kThroughput = true;
+  static constexpr bool kLatency = false;
+  static constexpr bool kOutText = false;
+  static constexpr size_t kTimeout = 100;
+  static constexpr size_t kThreadNum = DBGROUP_TEST_THREAD_NUM;
+
+  /*############################################################################
    * Setup/Teardown
-   *##################################################################################*/
+   *##########################################################################*/
 
   void
   SetUp() override
@@ -57,12 +70,13 @@ class BenchmarkerFixture : public ::testing::Test
   {
   }
 
-  /*####################################################################################
+  /*############################################################################
    * Functions for verification
-   *##################################################################################*/
+   *##########################################################################*/
 
   void
-  VerifyMeasureThroughput(const size_t thread_num)
+  VerifyMeasureThroughput(  //
+      const size_t thread_num)
   {
     benchmarker_ =
         std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
@@ -71,7 +85,8 @@ class BenchmarkerFixture : public ::testing::Test
   }
 
   void
-  VerifyMeasureLatency(const size_t thread_num)
+  VerifyMeasureLatency(  //
+      const size_t thread_num)
   {
     benchmarker_ =
         std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
@@ -80,20 +95,9 @@ class BenchmarkerFixture : public ::testing::Test
   }
 
  private:
-  /*####################################################################################
-   * Internal constants
-   *##################################################################################*/
-
-  static constexpr size_t kExecNum = 1e6;
-  static constexpr size_t kRandomSeed = 0;
-  static constexpr bool kThroughput = true;
-  static constexpr bool kLatency = false;
-  static constexpr bool kOutText = false;
-  static constexpr size_t kTimeout = 100;
-
-  /*####################################################################################
+  /*############################################################################
    * Internal member variables
-   *##################################################################################*/
+   *##########################################################################*/
 
   Target_t target_{};
 
@@ -102,16 +106,16 @@ class BenchmarkerFixture : public ::testing::Test
   std::unique_ptr<Benchmarker_t> benchmarker_{};
 };
 
-/*######################################################################################
+/*##############################################################################
  * Preparation for typed testing
- *####################################################################################*/
+ *############################################################################*/
 
 using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
 TYPED_TEST_SUITE(BenchmarkerFixture, Implementations);
 
-/*######################################################################################
+/*##############################################################################
  * Unit test definitions
- *####################################################################################*/
+ *############################################################################*/
 
 TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithSingleWorkerSucceed)
 {
@@ -125,12 +129,12 @@ TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithSingleWorkerSucceed)
 
 TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithMultiWorkersSucceed)
 {
-  TestFixture::VerifyMeasureThroughput(kThreadNum);
+  TestFixture::VerifyMeasureThroughput(TestFixture::kThreadNum);
 }
 
 TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithMultiWorkersSucceed)
 {
-  TestFixture::VerifyMeasureLatency(kThreadNum);
+  TestFixture::VerifyMeasureLatency(TestFixture::kThreadNum);
 }
 
 }  // namespace dbgroup::benchmark::test

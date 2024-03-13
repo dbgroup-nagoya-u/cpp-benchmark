@@ -18,11 +18,9 @@
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
 
 // C++ standard libraries
+#include <cstddef>
 #include <random>
 #include <vector>
-
-// local sources
-#include "benchmark/component/common.hpp"
 
 namespace dbgroup::benchmark::component
 {
@@ -33,9 +31,9 @@ namespace dbgroup::benchmark::component
 class Measurements
 {
  public:
-  /*####################################################################################
+  /*############################################################################
    * Public constructors and assignment operators
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Create a new Measurements object.
@@ -49,9 +47,9 @@ class Measurements
   auto operator=(const Measurements &obj) -> Measurements & = default;
   auto operator=(Measurements &&) -> Measurements & = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public destructors
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Destroy the Measurements object.
@@ -59,21 +57,21 @@ class Measurements
    */
   ~Measurements() = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public utility functions
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Get the measured latencies.
    *
-   * Note that this function performs random sampling to reduce the cost of computing
-   * percentiled latency.
-   *
-   * @param sample_num the number of desired samples.
-   * @return sampled latencies.
+   * @param sample_num The number of desired samples.
+   * @return Sampled latencies.
+   * @note This function performs random sampling to reduce the cost of
+   * computing percentile latency.
    */
   [[nodiscard]] auto
-  GetLatencies(const size_t sample_num) const  //
+  GetLatencies(                       //
+      const size_t sample_num) const  //
       -> std::vector<size_t>
   {
     std::uniform_int_distribution<size_t> id_engine{0, latencies_nano_.size() - 1};
@@ -90,7 +88,7 @@ class Measurements
   }
 
   /**
-   * @return the total number of executed operations.
+   * @return The total number of executed operations.
    */
   [[nodiscard]] auto
   GetTotalExecNum() const  //
@@ -100,7 +98,7 @@ class Measurements
   }
 
   /**
-   * @return total execution time.
+   * @return Total execution time.
    */
   [[nodiscard]] auto
   GetTotalExecTime() const  //
@@ -112,10 +110,11 @@ class Measurements
   /**
    * @brief Set the total number of executed operations.
    *
-   * @param total_exec_num the total number of executed operations.
+   * @param total_exec_num The total number of executed operations.
    */
   void
-  SetTotalExecNum(const size_t total_exec_num)
+  SetTotalExecNum(  //
+      const size_t total_exec_num)
   {
     total_exec_num_ = total_exec_num;
   }
@@ -123,10 +122,11 @@ class Measurements
   /**
    * @brief Set a total execution time.
    *
-   * @param total_exec_time_nano a total execution time [ns].
+   * @param total_exec_time_nano A total execution time [ns].
    */
   void
-  SetTotalExecTime(const size_t total_exec_time_nano)
+  SetTotalExecTime(  //
+      const size_t total_exec_time_nano)
   {
     total_exec_time_nano_ = total_exec_time_nano;
   }
@@ -134,26 +134,27 @@ class Measurements
   /**
    * @brief Add new latency to measuring results.
    *
-   * @param latency_nano latency [ns].
+   * @param latency_nano A measured latency [ns].
    */
   void
-  AddLatency(const size_t latency_nano)
+  AddLatency(  //
+      const size_t latency_nano)
   {
     latencies_nano_.emplace_back(latency_nano);
   }
 
  private:
-  /*####################################################################################
+  /*############################################################################
    * Internal member variables
-   *##################################################################################*/
+   *##########################################################################*/
 
-  /// the number of executed operations.
+  /// @brief The number of executed operations.
   size_t total_exec_num_{0};
 
-  /// total execution time [ns]
+  /// @brief Total execution time [ns].
   size_t total_exec_time_nano_{0};
 
-  /// execution time for each operation [ns]
+  /// @brief Execution time for each operation [ns].
   std::vector<size_t> latencies_nano_{};
 };
 
