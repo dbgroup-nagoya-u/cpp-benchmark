@@ -18,6 +18,7 @@
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
 
 // C++ standard libraries
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <random>

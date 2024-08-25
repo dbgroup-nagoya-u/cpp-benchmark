@@ -87,43 +87,18 @@ class Benchmarker
       const bool measure_throughput,
       const bool output_as_csv,
       const size_t timeout_in_sec,
-      const char *target_latency = kDefaultLatency)
+      const std::initializer_list<double> &target_latency = kDefaultLatency)
       : exec_num_{exec_num},
         thread_num_{thread_num},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
+        target_latency_{target_latency},
         bench_target_{bench_target},
         ops_engine_{ops_engine},
         ops_type_num_{ops_engine_.GetOpsTypeNum()},
         timeout_in_sec_{timeout_in_sec}
   {
-    if (!measure_throughput_) {
-      // check the number of samples is valid
-      const auto total_exec_num = exec_num_ * thread_num_;
-
-      // prepare percentile latency
-      constexpr size_t kDefaultCapacity = 32;
-      target_latency_.reserve(kDefaultCapacity);
-
-      // split a given percentile string
-      std::string target_lat_str{target_latency};
-      size_t begin_pos = 0;
-      size_t end_pos = target_lat_str.find_first_of(',');
-      while (begin_pos < target_lat_str.size()) {
-        // extract a latency string and convert to double
-        auto &&lat = target_lat_str.substr(begin_pos, end_pos - begin_pos);
-        target_latency_.emplace_back(std::stod(lat));
-
-        // find the next latency string
-        begin_pos = end_pos + 1;
-        end_pos = target_lat_str.find_first_of(',', begin_pos);
-        if (end_pos == std::string::npos) {
-          end_pos = target_lat_str.size();
-        }
-      }
-    }
-
     Log("*** START " + target_name + " ***");
   }
 
@@ -230,8 +205,8 @@ class Benchmarker
   static constexpr size_t kMaxLatencyNum = 1e6;
 
   /// @brief Targets for calculating parcentile latency.
-  static constexpr auto kDefaultLatency =
-      "0.01,0.05,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.95,0.99";
+  static constexpr auto kDefaultLatency = {0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50,
+                                           0.60, 0.70, 0.80, 0.90, 0.95, 0.99};
 
   /*############################################################################
    * Internal utility functions
