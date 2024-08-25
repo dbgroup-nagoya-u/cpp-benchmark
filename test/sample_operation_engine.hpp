@@ -24,18 +24,22 @@
 // local sources
 #include "sample_operation.hpp"
 
-class SampleOperationEngine
-{
- public:
-  constexpr SampleOperationEngine() = default;
+struct SampleOperationEngine {
+  [[nodiscard]] constexpr auto
+  GetOpsTypeNum() const  //
+      -> size_t
+  {
+    return 1;
+  }
 
   [[nodiscard]] auto
-  Generate(  // NOLINT
+  Generate(  //
       const size_t n,
-      [[maybe_unused]] const size_t random_seed) const  //
+      size_t) const  //
       -> std::vector<SampleOperation>
   {
-    return std::vector{n, SampleOperation{1}};
+    SampleOperation ops = {1};
+    return std::vector{n, ops};
   }
 };
 

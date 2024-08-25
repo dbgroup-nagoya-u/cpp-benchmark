@@ -56,7 +56,7 @@ class Benchmarker
 
   using Worker_t = component::Worker<Target, Operation>;
   using Worker_p = std::unique_ptr<Worker_t>;
-  using Result_p = std::unique_ptr<component::Measurements>;
+  using Result_p = std::unique_ptr<component::SimpleDDSketch>;
 
  public:
   /*############################################################################
@@ -87,45 +87,18 @@ class Benchmarker
       const bool measure_throughput,
       const bool output_as_csv,
       const size_t timeout_in_sec,
-      const char *target_latency = kDefaultLatency)
+      const std::initializer_list<double> &target_latency = kDefaultLatency)
       : exec_num_{exec_num},
         thread_num_{thread_num},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
+        target_latency_{target_latency},
         bench_target_{bench_target},
         ops_engine_{ops_engine},
+        ops_type_num_{ops_engine_.GetOpsTypeNum()},
         timeout_in_sec_{timeout_in_sec}
   {
-    if (!measure_throughput_) {
-      // check the number of samples is valid
-      const auto total_exec_num = exec_num_ * thread_num_;
-      if (total_exec_num < kMaxLatencyNum) {
-        total_sample_num_ = total_exec_num;
-      }
-
-      // prepare percentile latency
-      constexpr size_t kDefaultCapacity = 32;
-      target_latency_.reserve(kDefaultCapacity);
-
-      // split a given percentile string
-      std::string target_lat_str{target_latency};
-      size_t begin_pos = 0;
-      size_t end_pos = target_lat_str.find_first_of(',');
-      while (begin_pos < target_lat_str.size()) {
-        // extract a latency string and convert to double
-        auto &&lat = target_lat_str.substr(begin_pos, end_pos - begin_pos);
-        target_latency_.emplace_back(std::stod(lat));
-
-        // find the next latency string
-        begin_pos = end_pos + 1;
-        end_pos = target_lat_str.find_first_of(',', begin_pos);
-        if (end_pos == std::string::npos) {
-          end_pos = target_lat_str.size();
-        }
-      }
-    }
-
     Log("*** START " + target_name + " ***");
   }
 
@@ -211,10 +184,15 @@ class Benchmarker
      *------------------------------------------------------------------------*/
     Log("...Finish running.");
 
+    auto &&result = results[0];
+    for (size_t i = 1; i < thread_num_; ++i) {
+      *result += *(results[i]);
+    }
+
     if (measure_throughput_) {
-      LogThroughput(results);
+      LogThroughput(result);
     } else {
-      LogLatency(results);
+      LogLatency(result);
     }
   }
 
@@ -227,8 +205,8 @@ class Benchmarker
   static constexpr size_t kMaxLatencyNum = 1e6;
 
   /// @brief Targets for calculating parcentile latency.
-  static constexpr auto kDefaultLatency =
-      "0.01,0.05,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.95,0.99";
+  static constexpr auto kDefaultLatency = {0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50,
+                                           0.60, 0.70, 0.80, 0.90, 0.95, 0.99};
 
   /*############################################################################
    * Internal utility functions
@@ -249,8 +227,8 @@ class Benchmarker
   {
     // prepare a worker
     Worker_p worker{nullptr};
-    const auto &operations = ops_engine_.Generate(exec_num_, random_seed);
-    worker = std::make_unique<Worker_t>(bench_target_, std::move(operations));
+    auto &&operations = ops_engine_.Generate(exec_num_, random_seed);
+    worker = std::make_unique<Worker_t>(bench_target_, std::move(operations), ops_type_num_);
 
     // the preparation has finished, so wait other workers
     {
@@ -276,17 +254,11 @@ class Benchmarker
    */
   void
   LogThroughput(  //
-      const std::vector<Result_p> &results) const
+      const Result_p &result) const
   {
-    size_t exec_num = 0;
-    size_t avg_nano_time = 0;
-    for (auto &&result : results) {
-      exec_num += result->GetTotalExecNum();
-      avg_nano_time += result->GetTotalExecTime();
-    }
-    avg_nano_time /= thread_num_;
-
-    const auto throughput = exec_num / (avg_nano_time / 1E9);
+    const size_t exec_num = result->GetTotalExecNum();
+    const size_t avg_nano_time = result->GetTotalExecTime() / thread_num_;
+    const double throughput = exec_num / (avg_nano_time / 1E9);
 
     if (output_as_csv_) {
       std::cout << throughput << std::endl;
@@ -302,29 +274,20 @@ class Benchmarker
    */
   void
   LogLatency(  //
-      const std::vector<Result_p> &results) const
+      const Result_p &result) const
   {
-    std::vector<size_t> latencies;
-    latencies.reserve(kMaxLatencyNum);
-
-    // sort all execution time
-    for (size_t i = 0; i < thread_num_; ++i) {
-      const size_t n = (total_sample_num_ + i) / thread_num_;
-      auto &&worker_latencies = results[i]->GetLatencies(n);
-      latencies.insert(latencies.end(), worker_latencies.begin(), worker_latencies.end());
-    }
-    std::sort(latencies.begin(), latencies.end());
-
     Log("Percentiled Latency [ns]:");
-    for (auto &&percentile : target_latency_) {
-      const size_t percentiled_idx = (percentile == 1.0) ? latencies.size() - 1  //
-                                                         : latencies.size() * percentile;
-      if (!output_as_csv_) {
-        std::cout << "  " << std::fixed << std::setprecision(2) << percentile << ": ";
-      } else {
-        std::cout << percentile << ",";
+    for (size_t id = 0; id < ops_type_num_; ++id) {
+      if (!result->HasLatency(id)) continue;
+      Log(" Ops ID[" + std::to_string(id) + "]:");
+      for (auto &&q : target_latency_) {
+        if (!output_as_csv_) {
+          std::cout << "  " << std::fixed << std::setprecision(2) << q << ": ";
+        } else {
+          std::cout << id << "," << q << ",";
+        }
+        std::cout << result->Quantile(id, q) << std::endl;
       }
-      std::cout << latencies[percentiled_idx] << std::endl;
     }
   }
 
@@ -361,9 +324,6 @@ class Benchmarker
   /// @brief A flat to output measured results as CSV or TXT.
   const bool output_as_csv_{};
 
-  /// @brief The total number of sampled execution time for computing percentiled latency.
-  size_t total_sample_num_{kMaxLatencyNum};
-
   /// @brief Targets for calculating parcentile latency.
   std::vector<double> target_latency_{};
 
@@ -372,6 +332,9 @@ class Benchmarker
 
   /// @brief An target operation generator.
   OperationEngine &ops_engine_{};
+
+  /// @brief The number operation types.
+  size_t ops_type_num_{};
 
   /// @brief An exclusive mutex for waking up worker threads.
   std::mutex x_mtx_{};

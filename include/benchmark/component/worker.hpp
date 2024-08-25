@@ -56,10 +56,11 @@ class Worker
    */
   Worker(  //
       Target &target,
-      const std::vector<Operation> &&operations)
+      const std::vector<Operation> &&operations,
+      const size_t ops_num)
       : target_{target}, operations_{operations}
   {
-    measurements_ = std::make_unique<Measurements>();
+    sketch_ = std::make_unique<SimpleDDSketch>(ops_num);
     target_.SetUpForWorker();
   }
 
@@ -92,13 +93,13 @@ class Worker
   MeasureLatency(  //
       const std::atomic_bool &is_running)
   {
-    for (auto &&operation : operations_) {
+    for (auto &&ops : operations_) {
       stopwatch_.Start();
 
-      target_.Execute(operation);
+      target_.Execute(ops);
 
       stopwatch_.Stop();
-      measurements_->AddLatency(stopwatch_.GetNanoDuration());
+      sketch_->AddLatency(ops.GetOpsID(), stopwatch_.GetNanoDuration());
 
       if (!is_running.load(std::memory_order_relaxed)) break;
     }
@@ -116,14 +117,14 @@ class Worker
     stopwatch_.Start();
 
     size_t executed_num = 0;
-    for (auto &&operation : operations_) {
-      executed_num += target_.Execute(operation);
+    for (auto &&ops : operations_) {
+      executed_num += target_.Execute(ops);
       if (!is_running.load(std::memory_order_relaxed)) break;
     }
 
     stopwatch_.Stop();
-    measurements_->SetTotalExecNum(executed_num);
-    measurements_->SetTotalExecTime(stopwatch_.GetNanoDuration());
+    sketch_->SetTotalExecNum(executed_num);
+    sketch_->SetTotalExecTime(stopwatch_.GetNanoDuration());
   }
 
   /**
@@ -133,9 +134,9 @@ class Worker
    */
   auto
   MoveMeasurements()  //
-      -> std::unique_ptr<Measurements>
+      -> std::unique_ptr<SimpleDDSketch>
   {
-    return std::move(measurements_);
+    return std::move(sketch_);
   }
 
  private:
@@ -150,7 +151,7 @@ class Worker
   const std::vector<Operation> operations_{};
 
   /// @brief Measurement results.
-  std::unique_ptr<Measurements> measurements_{nullptr};
+  std::unique_ptr<SimpleDDSketch> sketch_{nullptr};
 
   /// @brief A stopwatch to measure execution time.
   StopWatch stopwatch_{};
