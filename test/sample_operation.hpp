@@ -20,18 +20,15 @@
 // C++ standard libraries
 #include <cstddef>
 
-class SampleOperation
-{
- public:
-  constexpr SampleOperation() = default;
-
-  explicit constexpr SampleOperation(  //
-      const size_t val)
-      : val{val}
+struct SampleOperation {
+  [[nodiscard]] constexpr auto
+  GetOpsID() const  //
+      -> size_t
   {
+    return 0;
   }
 
-  size_t val{0};
+  size_t val;
 };
 
 #endif  // CPP_BENCHMARK_TEST_SAMPLE_OPERATION_H_

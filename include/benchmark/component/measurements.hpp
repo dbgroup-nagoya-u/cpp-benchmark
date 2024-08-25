@@ -18,6 +18,7 @@
 #define CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
 
 // C++ standard libraries
+#include <cmath>
 #include <cstddef>
 #include <random>
 #include <vector>
@@ -25,10 +26,16 @@
 namespace dbgroup::benchmark::component
 {
 /**
- * @brief A class for dealing with benchmarking results.
+ * @brief A class for computing approximated quantile.
  *
+ * This implementation is based on DDSketch [1] but is simplified. This uses the
+ * fixed number of bins and ignores the performance of quantile queries.
+ *
+ * [1] Charles Masson et al., "DDSketch: A fast and fully-mergeable quantile
+ * sketch with relative-error guarantees," PVLDB, Vol. 12, No. 12, pp. 2195-2205,
+ * 2019.
  */
-class Measurements
+class SimpleDDSketch
 {
  public:
   /*############################################################################
@@ -36,56 +43,63 @@ class Measurements
    *##########################################################################*/
 
   /**
-   * @brief Create a new Measurements object.
+   * @brief Create a new SimpleDDSketch object.
    *
+   * @param ops_num The number of operation types.
    */
-  constexpr Measurements() = default;
+  SimpleDDSketch(  //
+      const size_t ops_num)
+      : bins_{ops_num, std::array<uint32_t, kBinNum>{}}
+  {
+    for (size_t i = 0; i < ops_num; ++i) {
+      exec_nums_.emplace_back(0);
+    }
+  }
 
-  Measurements(const Measurements &) = default;
-  Measurements(Measurements &&) = default;
+  SimpleDDSketch(const SimpleDDSketch &) = default;
+  SimpleDDSketch(SimpleDDSketch &&) = default;
 
-  auto operator=(const Measurements &obj) -> Measurements & = default;
-  auto operator=(Measurements &&) -> Measurements & = default;
+  auto operator=(const SimpleDDSketch &obj) -> SimpleDDSketch & = default;
+  auto operator=(SimpleDDSketch &&) -> SimpleDDSketch & = default;
 
   /*############################################################################
    * Public destructors
    *##########################################################################*/
 
   /**
-   * @brief Destroy the Measurements object.
+   * @brief Destroy the SimpleDDSketch object.
    *
    */
-  ~Measurements() = default;
+  ~SimpleDDSketch() = default;
 
   /*############################################################################
-   * Public utility functions
+   * Public operators
    *##########################################################################*/
 
   /**
-   * @brief Get the measured latencies.
+   * @brief Merge a given sketch into this.
    *
-   * @param sample_num The number of desired samples.
-   * @return Sampled latencies.
-   * @note This function performs random sampling to reduce the cost of
-   * computing percentile latency.
+   * @param rhs A sketch to be merged.
    */
-  [[nodiscard]] auto
-  GetLatencies(                       //
-      const size_t sample_num) const  //
-      -> std::vector<size_t>
+  void
+  operator+=(  //
+      const SimpleDDSketch &rhs)
   {
-    std::uniform_int_distribution<size_t> id_engine{0, latencies_nano_.size() - 1};
-    std::mt19937_64 rand_engine{std::random_device{}()};
+    total_exec_num_ += rhs.total_exec_num_;
+    total_exec_time_nano_ += rhs.total_exec_time_nano_;
 
-    // perform random sampling
-    std::vector<size_t> sampled_latencies;
-    sampled_latencies.reserve(sample_num);
-    for (size_t i = 0; i < sample_num; ++i) {
-      sampled_latencies.emplace_back(latencies_nano_[id_engine(rand_engine)]);
+    const auto ops_num = bins_.size();
+    for (size_t ops_id = 0; ops_id < ops_num; ++ops_id) {
+      exec_nums_[ops_id] += rhs.exec_nums_[ops_id];
+      for (size_t i = 0; i < kBinNum; ++i) {
+        bins_[ops_id][i] += rhs.bins_[ops_id][i];
+      }
     }
-
-    return sampled_latencies;
   }
+
+  /*############################################################################
+   * Public APIs for throughput
+   *##########################################################################*/
 
   /**
    * @return The total number of executed operations.
@@ -131,19 +145,78 @@ class Measurements
     total_exec_time_nano_ = total_exec_time_nano;
   }
 
+  /*############################################################################
+   * Public APIs for latency
+   *##########################################################################*/
+
   /**
    * @brief Add new latency to measuring results.
    *
-   * @param latency_nano A measured latency [ns].
+   * @param ops_id The ID of a target operation.
+   * @param lat A measured latency [ns].
    */
   void
   AddLatency(  //
-      const size_t latency_nano)
+      const size_t ops_id,
+      const size_t lat)
   {
-    latencies_nano_.emplace_back(latency_nano);
+    const auto pos = (lat == 0) ? 0 : static_cast<size_t>(std::ceil(std::log(lat) / denom_));
+    ++bins_[ops_id][pos];
+    ++exec_nums_[ops_id];
+  }
+
+  /**
+   * @param ops_id The ID of a target operation.
+   * @retval true if a target operation was executed.
+   * @retval false otherwise.
+   */
+  auto
+  HasLatency(               //
+      const size_t ops_id)  //
+      -> bool
+  {
+    return exec_nums_.at(ops_id) > 0;
+  }
+
+  /**
+   * @param ops_id The ID of a target operation.
+   * @param q A target quantile value.
+   * @return The latency of given quantile.
+   */
+  auto
+  Quantile(  //
+      const size_t ops_id,
+      const double q) const  //
+      -> size_t
+  {
+    const size_t bound = q * exec_nums_[ops_id];
+    size_t cnt = 0;
+    for (size_t i = 0; i < kBinNum; ++i) {
+      cnt += bins_[ops_id][i];
+      if (cnt > bound) {
+        return 2 * std::pow(kGamma, i) / (kGamma + 1);
+      }
+    }
+    return 0;
   }
 
  private:
+  /*############################################################################
+   * Internal constants
+   *##########################################################################*/
+
+  /// @brief The number of bins.
+  static constexpr size_t kBinNum = 2048;
+
+  /// @brief A desired relative error.
+  static constexpr double kAlpha = 0.01;
+
+  /// @brief The base value for approximation.
+  static constexpr double kGamma = (1.0 + kAlpha) / (1.0 - kAlpha);
+
+  /// @brief The denominator for the logarithm change of base.
+  static inline const double denom_ = std::log(kGamma);
+
   /*############################################################################
    * Internal member variables
    *##########################################################################*/
@@ -154,8 +227,11 @@ class Measurements
   /// @brief Total execution time [ns].
   size_t total_exec_time_nano_{0};
 
+  /// @brief The number of executions for each operations.
+  std::vector<size_t> exec_nums_{};
+
   /// @brief Execution time for each operation [ns].
-  std::vector<size_t> latencies_nano_{};
+  std::vector<std::array<uint32_t, kBinNum>> bins_{};
 };
 
 }  // namespace dbgroup::benchmark::component
