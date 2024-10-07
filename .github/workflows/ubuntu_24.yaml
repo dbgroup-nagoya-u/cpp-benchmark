@@ -1,4 +1,4 @@
-name: Ubuntu 20.04
+name: Ubuntu 24.04
 
 on:
   push:
@@ -10,4 +10,4 @@ jobs:
   call-unit-test-workflow:
     uses: ./.github/workflows/unit_tests.yaml
     with:
-      os: ubuntu-20.04
+      os: ubuntu-24.04
