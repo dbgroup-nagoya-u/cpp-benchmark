@@ -22,6 +22,8 @@
 #include <stdexcept>
 #include <string>
 
+namespace dbgroup::benchmark
+{
 /*##############################################################################
  * Validators for gflags
  *############################################################################*/
@@ -67,5 +69,7 @@ ValidateStr2UInt(  //
   }
   return true;
 }
+
+}  // namespace dbgroup::benchmark
 
 #endif  // DBGROUP_BENCHMARK_VALIDATOR_HPP_
