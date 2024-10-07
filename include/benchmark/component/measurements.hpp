@@ -21,7 +21,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <random>
+#include <cstdint>
 #include <vector>
 
 namespace dbgroup::benchmark::component
@@ -48,14 +48,8 @@ class SimpleDDSketch
    *
    * @param ops_num The number of operation types.
    */
-  SimpleDDSketch(  //
-      const size_t ops_num)
-      : bins_{ops_num, std::array<uint32_t, kBinNum>{}}
-  {
-    for (size_t i = 0; i < ops_num; ++i) {
-      exec_nums_.emplace_back(0);
-    }
-  }
+  explicit SimpleDDSketch(  //
+      size_t ops_num);
 
   SimpleDDSketch(const SimpleDDSketch &) = default;
   SimpleDDSketch(SimpleDDSketch &&) = default;
@@ -82,21 +76,8 @@ class SimpleDDSketch
    *
    * @param rhs A sketch to be merged.
    */
-  void
-  operator+=(  //
-      const SimpleDDSketch &rhs)
-  {
-    total_exec_num_ += rhs.total_exec_num_;
-    total_exec_time_nano_ += rhs.total_exec_time_nano_;
-
-    const auto ops_num = bins_.size();
-    for (size_t ops_id = 0; ops_id < ops_num; ++ops_id) {
-      exec_nums_[ops_id] += rhs.exec_nums_[ops_id];
-      for (size_t i = 0; i < kBinNum; ++i) {
-        bins_[ops_id][i] += rhs.bins_[ops_id][i];
-      }
-    }
-  }
+  void operator+=(  //
+      const SimpleDDSketch &rhs);
 
   /*############################################################################
    * Public APIs for throughput
@@ -105,7 +86,7 @@ class SimpleDDSketch
   /**
    * @return The total number of executed operations.
    */
-  [[nodiscard]] auto
+  [[nodiscard]] constexpr auto
   GetTotalExecNum() const  //
       -> size_t
   {
@@ -115,7 +96,7 @@ class SimpleDDSketch
   /**
    * @return Total execution time.
    */
-  [[nodiscard]] auto
+  [[nodiscard]] constexpr auto
   GetTotalExecTime() const  //
       -> size_t
   {
@@ -127,7 +108,7 @@ class SimpleDDSketch
    *
    * @param total_exec_num The total number of executed operations.
    */
-  void
+  constexpr void
   SetTotalExecNum(  //
       const size_t total_exec_num)
   {
@@ -139,7 +120,7 @@ class SimpleDDSketch
    *
    * @param total_exec_time_nano A total execution time [ns].
    */
-  void
+  constexpr void
   SetTotalExecTime(  //
       const size_t total_exec_time_nano)
   {
@@ -156,48 +137,28 @@ class SimpleDDSketch
    * @param ops_id The ID of a target operation.
    * @param lat A measured latency [ns].
    */
-  void
-  AddLatency(  //
-      const size_t ops_id,
-      const size_t lat)
-  {
-    const auto pos = (lat == 0) ? 0 : static_cast<size_t>(std::ceil(std::log(lat) / denom_));
-    ++bins_[ops_id][pos];
-    ++exec_nums_[ops_id];
-  }
+  void AddLatency(  //
+      size_t ops_id,
+      size_t lat);
 
   /**
    * @param ops_id The ID of a target operation.
    * @retval true if a target operation was executed.
    * @retval false otherwise.
    */
-  auto
-  HasLatency(               //
-      const size_t ops_id)  //
-      -> bool
-  {
-    return exec_nums_.at(ops_id) > 0;
-  }
+  [[nodiscard]] auto HasLatency(  //
+      size_t ops_id) const        //
+      -> bool;
 
   /**
    * @param ops_id The ID of a target operation.
    * @param q A target quantile value.
    * @return The latency of given quantile.
    */
-  auto
-  Quantile(  //
-      const size_t ops_id,
-      const double q) const  //
-      -> size_t
-  {
-    const size_t bound = q * (exec_nums_[ops_id] - 1);
-    size_t cnt = bins_[ops_id][0];
-    size_t i = 0;
-    while (i < kBinNum - 1 && cnt <= bound) {
-      cnt += bins_[ops_id][++i];
-    }
-    return 2 * std::pow(kGamma, i) / (kGamma + 1);
-  }
+  [[nodiscard]] auto Quantile(  //
+      size_t ops_id,
+      double q) const  //
+      -> size_t;
 
  private:
   /*############################################################################
@@ -214,17 +175,17 @@ class SimpleDDSketch
   static constexpr double kGamma = (1.0 + kAlpha) / (1.0 - kAlpha);
 
   /// @brief The denominator for the logarithm change of base.
-  static inline const double denom_ = std::log(kGamma);
+  static inline const double denom_ = std::log(kGamma);  // NOLINT
 
   /*############################################################################
    * Internal member variables
    *##########################################################################*/
 
   /// @brief The number of executed operations.
-  size_t total_exec_num_{0};
+  size_t total_exec_num_{};
 
   /// @brief Total execution time [ns].
-  size_t total_exec_time_nano_{0};
+  size_t total_exec_time_nano_{};
 
   /// @brief The number of executions for each operations.
   std::vector<size_t> exec_nums_{};
