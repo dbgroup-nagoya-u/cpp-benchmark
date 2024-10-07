@@ -1,13 +1,13 @@
 # C++ Benchmarker
 
-[![Ubuntu 22.04](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_22.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_22.yaml) [![Ubuntu 20.04](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_20.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_20.yaml) [![macOS](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/mac.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/mac.yaml)
+[![Ubuntu 24.04](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_24.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_24.yaml) [![Ubuntu 22.04](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_22.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/ubuntu_22.yaml) [![macOS](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/mac.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/cpp-benchmark/actions/workflows/mac.yaml)
 
 - [Build](#build)
-  - [Prerequisites](#prerequisites)
-  - [Build Options](#build-options)
-  - [Build and Run Unit Tests](#build-and-run-unit-tests)
+    - [Prerequisites](#prerequisites)
+    - [Build Options](#build-options)
+    - [Build and Run Unit Tests](#build-and-run-unit-tests)
 - [Usage](#usage)
-  - [Linking by CMake](#linking-by-cmake)
+    - [Linking by CMake](#linking-by-cmake)
 - [Acknowledgments](#acknowledgments)
 
 ## Build

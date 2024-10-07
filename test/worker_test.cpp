@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "benchmark/component/worker.hpp"
+#include "dbgroup/benchmark/component/worker.hpp"
 
 // C++ standard libraries
 #include <atomic>
@@ -25,7 +25,7 @@
 #include "gtest/gtest.h"
 
 // library headers
-#include "benchmark/component/stopwatch.hpp"
+#include "dbgroup/benchmark/component/stopwatch.hpp"
 
 // local sources
 #include "sample_operation.hpp"
@@ -52,9 +52,8 @@ class WorkerFixture : public ::testing::Test
   void
   SetUp() override
   {
-    SampleOperationEngine ops_engine{};
-
-    worker_ = std::make_unique<Worker_t>(target_, ops_engine.Generate(kExecNum, kRandomSeed), 1);
+    worker_ = std::make_unique<Worker_t>(target_,
+                                         SampleOperationEngine::Generate(kExecNum, kRandomSeed), 1);
   }
 
   void
@@ -69,7 +68,7 @@ class WorkerFixture : public ::testing::Test
   void
   VerifyMeasureThroughput()
   {
-    std::atomic_bool is_running{true};
+    const std::atomic_bool is_running{true};
     stopwatch_.Start();
     worker_->MeasureThroughput(is_running);
     stopwatch_.Stop();
@@ -87,22 +86,18 @@ class WorkerFixture : public ::testing::Test
   void
   VerifyMeasureLatency()
   {
-    std::atomic_bool is_running{true};
+    const std::atomic_bool is_running{true};
     stopwatch_.Start();
     worker_->MeasureLatency(is_running);
     stopwatch_.Stop();
 
-    // check random sampling is performed
     const auto &results = worker_->MoveMeasurements();
-    // const auto latencies = results->GetLatencies(0, kSampleNum);
-    // EXPECT_EQ(kSampleNum, latencies.size());
-
-    // // check each latency is reasonable
-    // const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
-    // for (auto &&latency : latencies) {
-    //   EXPECT_GE(latency, 0);
-    //   EXPECT_LE(latency, wrapperred_exec_time);
-    // }
+    auto prev = results->Quantile(0, 0);
+    for (size_t i = 1; i < 100; ++i) {  // NOLINT
+      auto cur = results->Quantile(0, i);
+      EXPECT_LE(prev, cur);
+      prev = cur;
+    }
 
     // check the worker performs all the operations
     EXPECT_EQ(kExecNum, target_.GetSum());

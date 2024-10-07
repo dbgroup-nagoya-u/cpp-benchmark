@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
-#define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
+#ifndef DBGROUP_BENCHMARK_BENCHMARKER_HPP_
+#define DBGROUP_BENCHMARK_BENCHMARKER_HPP_
 
 // C++ standard libraries
 #include <algorithm>
@@ -23,6 +23,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstddef>
+#include <cstdio>
 #include <future>
 #include <iomanip>
 #include <iostream>
@@ -35,8 +36,8 @@
 #include <vector>
 
 // local sources
-#include "benchmark/component/measurements.hpp"
-#include "benchmark/component/worker.hpp"
+#include "dbgroup/benchmark/component/measurements.hpp"
+#include "dbgroup/benchmark/component/worker.hpp"
 
 namespace dbgroup::benchmark
 {
@@ -87,13 +88,13 @@ class Benchmarker
       const bool measure_throughput,
       const bool output_as_csv,
       const size_t timeout_in_sec,
-      const std::initializer_list<double> &target_latency = kDefaultLatency)
+      std::vector<double> target_latency = kDefaultLatency)
       : exec_num_{exec_num},
         thread_num_{thread_num},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
-        target_latency_{target_latency},
+        target_latency_{std::move(target_latency)},
         bench_target_{bench_target},
         ops_engine_{ops_engine},
         ops_type_num_{ops_engine_.GetOpsTypeNum()},
@@ -163,7 +164,7 @@ class Benchmarker
     Log("...Run workers.");
 
     {
-      std::lock_guard x_guard{x_mtx_};
+      const std::lock_guard x_guard{x_mtx_};
       ready_for_benchmarking_ = true;
     }
     cond_.notify_all();
@@ -205,8 +206,8 @@ class Benchmarker
   static constexpr size_t kMaxLatencyNum = 1e6;
 
   /// @brief Targets for calculating parcentile latency.
-  static constexpr auto kDefaultLatency = {0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50,
-                                           0.60, 0.70, 0.80, 0.90, 0.95, 0.99};
+  static constexpr auto kDefaultLatency  //
+      = {0.0, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 0.9999, 1.0};
 
   /*############################################################################
    * Internal utility functions
@@ -258,12 +259,12 @@ class Benchmarker
   {
     const size_t exec_num = result->GetTotalExecNum();
     const size_t avg_nano_time = result->GetTotalExecTime() / thread_num_;
-    const double throughput = exec_num / (avg_nano_time / 1E9);
+    const double throughput = static_cast<double>(exec_num) / (avg_nano_time / 1E9);
 
     if (output_as_csv_) {
-      std::cout << throughput << std::endl;
+      std::cout << throughput << "\n";
     } else {
-      std::cout << "Throughput [Ops/s]: " << throughput << std::endl;
+      std::cout << "Throughput [Ops/s]: " << throughput << "\n";
     }
   }
 
@@ -282,11 +283,10 @@ class Benchmarker
       Log(" Ops ID[" + std::to_string(id) + "]:");
       for (auto &&q : target_latency_) {
         if (!output_as_csv_) {
-          std::cout << "  " << std::fixed << std::setprecision(2) << q << ": ";
+          std::printf("  %6.2f: %12lu\n", 100 * q, result->Quantile(id, q));  // NOLINT
         } else {
-          std::cout << id << "," << q << ",";
+          std::cout << id << "," << q << "," << result->Quantile(id, q) << "\n";
         }
-        std::cout << result->Quantile(id, q) << std::endl;
       }
     }
   }
@@ -301,7 +301,7 @@ class Benchmarker
       const std::string &message) const
   {
     if (!output_as_csv_) {
-      std::cout << message << std::endl;
+      std::cout << message << "\n";
     }
   }
 
@@ -354,4 +354,4 @@ class Benchmarker
 
 }  // namespace dbgroup::benchmark
 
-#endif  // CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
+#endif  // DBGROUP_BENCHMARK_BENCHMARKER_HPP_
