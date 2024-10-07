@@ -23,6 +23,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstddef>
+#include <cstdio>
 #include <future>
 #include <iomanip>
 #include <iostream>
@@ -261,9 +262,9 @@ class Benchmarker
     const double throughput = exec_num / (avg_nano_time / 1E9);
 
     if (output_as_csv_) {
-      std::cout << throughput << std::endl;
+      std::cout << throughput << "\n";
     } else {
-      std::cout << "Throughput [Ops/s]: " << throughput << std::endl;
+      std::cout << "Throughput [Ops/s]: " << throughput << "\n";
     }
   }
 
@@ -282,11 +283,10 @@ class Benchmarker
       Log(" Ops ID[" + std::to_string(id) + "]:");
       for (auto &&q : target_latency_) {
         if (!output_as_csv_) {
-          std::cout << "  " << std::fixed << std::setprecision(2) << q << ": ";
+          std::printf("  %6.2f: %12lu\n", 100 * q, result->Quantile(id, q));
         } else {
-          std::cout << id << "," << q << ",";
+          std::cout << id << "," << q << "," << result->Quantile(id, q) << "\n";
         }
-        std::cout << result->Quantile(id, q) << std::endl;
       }
     }
   }
@@ -301,7 +301,7 @@ class Benchmarker
       const std::string &message) const
   {
     if (!output_as_csv_) {
-      std::cout << message << std::endl;
+      std::cout << message << "\n";
     }
   }
 
