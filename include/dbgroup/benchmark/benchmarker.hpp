@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
-#define CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
+#ifndef DBGROUP_BENCHMARK_BENCHMARKER_HPP_
+#define DBGROUP_BENCHMARK_BENCHMARKER_HPP_
 
 // C++ standard libraries
 #include <algorithm>
@@ -36,8 +36,8 @@
 #include <vector>
 
 // local sources
-#include "benchmark/component/measurements.hpp"
-#include "benchmark/component/worker.hpp"
+#include "dbgroup/benchmark/component/measurements.hpp"
+#include "dbgroup/benchmark/component/worker.hpp"
 
 namespace dbgroup::benchmark
 {
@@ -354,4 +354,4 @@ class Benchmarker
 
 }  // namespace dbgroup::benchmark
 
-#endif  // CPP_BENCHMARK_BENCHMARK_BENCHMARKER_HPP
+#endif  // DBGROUP_BENCHMARK_BENCHMARKER_HPP_

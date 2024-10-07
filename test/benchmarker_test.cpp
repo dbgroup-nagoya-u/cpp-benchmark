@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "benchmark/benchmarker.hpp"
+#include "dbgroup/benchmark/benchmarker.hpp"
 
 // C++ standard libraries
 #include <atomic>

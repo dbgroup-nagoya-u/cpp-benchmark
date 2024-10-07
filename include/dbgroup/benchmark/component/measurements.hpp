@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
-#define CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
+#ifndef DBGROUP_BENCHMARK_COMPONENT_MEASUREMENTS_HPP_
+#define DBGROUP_BENCHMARK_COMPONENT_MEASUREMENTS_HPP_
 
 // C++ standard libraries
 #include <array>
@@ -196,4 +196,4 @@ class SimpleDDSketch
 
 }  // namespace dbgroup::benchmark::component
 
-#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_MEASUREMENTS_HPP
+#endif  // DBGROUP_BENCHMARK_COMPONENT_MEASUREMENTS_HPP_

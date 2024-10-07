@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
-#define CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
+#ifndef DBGROUP_BENCHMARK_COMPONENT_WORKER_HPP_
+#define DBGROUP_BENCHMARK_COMPONENT_WORKER_HPP_
 
 // C++ standard libraries
 #include <atomic>
@@ -26,8 +26,8 @@
 #include <vector>
 
 // local sources
-#include "benchmark/component/measurements.hpp"
-#include "benchmark/component/stopwatch.hpp"
+#include "dbgroup/benchmark/component/measurements.hpp"
+#include "dbgroup/benchmark/component/stopwatch.hpp"
 
 namespace dbgroup::benchmark::component
 {
@@ -159,4 +159,4 @@ class Worker
 
 }  // namespace dbgroup::benchmark::component
 
-#endif  // CPP_BENCHMARK_BENCHMARK_COMPONENT_WORKER_HPP
+#endif  // DBGROUP_BENCHMARK_COMPONENT_WORKER_HPP_

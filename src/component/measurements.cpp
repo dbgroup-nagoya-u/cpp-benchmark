@@ -15,7 +15,7 @@
  */
 
 // the corresponding header
-#include "benchmark/component/measurements.hpp"
+#include "dbgroup/benchmark/component/measurements.hpp"
 
 // C++ standard libraries
 #include <array>

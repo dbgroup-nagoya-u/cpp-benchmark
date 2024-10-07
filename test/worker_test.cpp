@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "benchmark/component/worker.hpp"
+#include "dbgroup/benchmark/component/worker.hpp"
 
 // C++ standard libraries
 #include <atomic>
@@ -25,7 +25,7 @@
 #include "gtest/gtest.h"
 
 // library headers
-#include "benchmark/component/stopwatch.hpp"
+#include "dbgroup/benchmark/component/stopwatch.hpp"
 
 // local sources
 #include "sample_operation.hpp"
