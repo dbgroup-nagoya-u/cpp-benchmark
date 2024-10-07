@@ -88,13 +88,13 @@ class Benchmarker
       const bool measure_throughput,
       const bool output_as_csv,
       const size_t timeout_in_sec,
-      const std::initializer_list<double> &target_latency = kDefaultLatency)
+      std::vector<double> target_latency = kDefaultLatency)
       : exec_num_{exec_num},
         thread_num_{thread_num},
         random_seed_{random_seed},
         measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
-        target_latency_{target_latency},
+        target_latency_{std::move(target_latency)},
         bench_target_{bench_target},
         ops_engine_{ops_engine},
         ops_type_num_{ops_engine_.GetOpsTypeNum()},
@@ -206,8 +206,8 @@ class Benchmarker
   static constexpr size_t kMaxLatencyNum = 1e6;
 
   /// @brief Targets for calculating parcentile latency.
-  static constexpr auto kDefaultLatency = {0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50,
-                                           0.60, 0.70, 0.80, 0.90, 0.95, 0.99};
+  static constexpr auto kDefaultLatency  //
+      = {0.0, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 0.9999, 1.0};
 
   /*############################################################################
    * Internal utility functions
