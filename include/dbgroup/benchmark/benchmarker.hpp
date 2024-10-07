@@ -164,7 +164,7 @@ class Benchmarker
     Log("...Run workers.");
 
     {
-      std::lock_guard x_guard{x_mtx_};
+      const std::lock_guard x_guard{x_mtx_};
       ready_for_benchmarking_ = true;
     }
     cond_.notify_all();
@@ -259,7 +259,7 @@ class Benchmarker
   {
     const size_t exec_num = result->GetTotalExecNum();
     const size_t avg_nano_time = result->GetTotalExecTime() / thread_num_;
-    const double throughput = exec_num / (avg_nano_time / 1E9);
+    const double throughput = static_cast<double>(exec_num) / (avg_nano_time / 1E9);
 
     if (output_as_csv_) {
       std::cout << throughput << "\n";
@@ -283,7 +283,7 @@ class Benchmarker
       Log(" Ops ID[" + std::to_string(id) + "]:");
       for (auto &&q : target_latency_) {
         if (!output_as_csv_) {
-          std::printf("  %6.2f: %12lu\n", 100 * q, result->Quantile(id, q));
+          std::printf("  %6.2f: %12lu\n", 100 * q, result->Quantile(id, q));  // NOLINT
         } else {
           std::cout << id << "," << q << "," << result->Quantile(id, q) << "\n";
         }

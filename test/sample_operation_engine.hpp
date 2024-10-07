@@ -25,20 +25,20 @@
 #include "sample_operation.hpp"
 
 struct SampleOperationEngine {
-  [[nodiscard]] constexpr auto
-  GetOpsTypeNum() const  //
+  [[nodiscard]] static constexpr auto
+  GetOpsTypeNum()  //
       -> size_t
   {
     return 1;
   }
 
-  [[nodiscard]] auto
+  [[nodiscard]] static auto
   Generate(  //
       const size_t n,
-      size_t) const  //
+      [[maybe_unused]] const size_t dummy)  //
       -> std::vector<SampleOperation>
   {
-    SampleOperation ops = {1};
+    const SampleOperation ops = {1};
     return std::vector{n, ops};
   }
 };

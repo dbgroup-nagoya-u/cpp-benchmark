@@ -21,8 +21,8 @@
 #include <cstddef>
 
 struct SampleOperation {
-  [[nodiscard]] constexpr auto
-  GetOpsID() const  //
+  [[nodiscard]] static constexpr auto
+  GetOpsID()  //
       -> size_t
   {
     return 0;
