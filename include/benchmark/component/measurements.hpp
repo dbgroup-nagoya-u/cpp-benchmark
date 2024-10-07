@@ -190,15 +190,13 @@ class SimpleDDSketch
       const double q) const  //
       -> size_t
   {
-    const size_t bound = q * exec_nums_[ops_id];
-    size_t cnt = 0;
-    for (size_t i = 0; i < kBinNum; ++i) {
-      cnt += bins_[ops_id][i];
-      if (cnt > bound) {
-        return 2 * std::pow(kGamma, i) / (kGamma + 1);
-      }
+    const size_t bound = q * (exec_nums_[ops_id] - 1);
+    size_t cnt = bins_[ops_id][0];
+    size_t i = 0;
+    while (i < kBinNum - 1 && cnt <= bound) {
+      cnt += bins_[ops_id][++i];
     }
-    return 0;
+    return 2 * std::pow(kGamma, i) / (kGamma + 1);
   }
 
  private:
