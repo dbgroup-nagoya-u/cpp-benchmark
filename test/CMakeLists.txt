@@ -24,6 +24,8 @@ set(
 # Build Unit Tests
 #------------------------------------------------------------------------------#
 
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/example")
+
   # define function to add unit tests in the same format
 function(ADD_DBGROUP_TEST DBGROUP_TEST_TARGET)
   add_executable(${DBGROUP_TEST_TARGET}
@@ -44,6 +46,7 @@ function(ADD_DBGROUP_TEST DBGROUP_TEST_TARGET)
   )
   target_link_libraries(${DBGROUP_TEST_TARGET} PRIVATE
     dbgroup::${PROJECT_NAME}
+    dbgroup::example_bench
     GTest::gtest_main
   )
   add_test(NAME ${DBGROUP_TEST_TARGET} COMMAND $<TARGET_FILE:${DBGROUP_TEST_TARGET}>)

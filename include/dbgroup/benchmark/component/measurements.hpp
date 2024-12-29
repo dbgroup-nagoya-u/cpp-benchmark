@@ -39,9 +39,11 @@ namespace dbgroup::benchmark::component
 class SimpleDDSketch
 {
  public:
-  /*############################################################################
+  /*##########################################################################*
    * Public constructors and assignment operators
    *##########################################################################*/
+
+  constexpr SimpleDDSketch() = default;
 
   /**
    * @brief Create a new SimpleDDSketch object.
@@ -57,7 +59,7 @@ class SimpleDDSketch
   auto operator=(const SimpleDDSketch &obj) -> SimpleDDSketch & = default;
   auto operator=(SimpleDDSketch &&) -> SimpleDDSketch & = default;
 
-  /*############################################################################
+  /*##########################################################################*
    * Public destructors
    *##########################################################################*/
 
@@ -67,7 +69,7 @@ class SimpleDDSketch
    */
   ~SimpleDDSketch() = default;
 
-  /*############################################################################
+  /*##########################################################################*
    * Public operators
    *##########################################################################*/
 
@@ -79,8 +81,8 @@ class SimpleDDSketch
   void operator+=(  //
       const SimpleDDSketch &rhs);
 
-  /*############################################################################
-   * Public APIs for throughput
+  /*##########################################################################*
+   * Public APIs
    *##########################################################################*/
 
   /**
@@ -104,41 +106,15 @@ class SimpleDDSketch
   }
 
   /**
-   * @brief Set the total number of executed operations.
-   *
-   * @param total_exec_num The total number of executed operations.
-   */
-  constexpr void
-  SetTotalExecNum(  //
-      const size_t total_exec_num)
-  {
-    total_exec_num_ = total_exec_num;
-  }
-
-  /**
-   * @brief Set a total execution time.
-   *
-   * @param total_exec_time_nano A total execution time [ns].
-   */
-  constexpr void
-  SetTotalExecTime(  //
-      const size_t total_exec_time_nano)
-  {
-    total_exec_time_nano_ = total_exec_time_nano;
-  }
-
-  /*############################################################################
-   * Public APIs for latency
-   *##########################################################################*/
-
-  /**
    * @brief Add new latency to measuring results.
    *
    * @param ops_id The ID of a target operation.
+   * @param cnt The number of executions for throughput.
    * @param lat A measured latency [ns].
    */
-  void AddLatency(  //
+  void Add(  //
       size_t ops_id,
+      size_t cnt,
       size_t lat);
 
   /**
@@ -161,7 +137,7 @@ class SimpleDDSketch
       -> size_t;
 
  private:
-  /*############################################################################
+  /*##########################################################################*
    * Internal constants
    *##########################################################################*/
 
@@ -177,7 +153,7 @@ class SimpleDDSketch
   /// @brief The denominator for the logarithm change of base.
   static inline const double denom_ = std::log(kGamma);  // NOLINT
 
-  /*############################################################################
+  /*##########################################################################*
    * Internal member variables
    *##########################################################################*/
 
@@ -186,6 +162,12 @@ class SimpleDDSketch
 
   /// @brief Total execution time [ns].
   size_t total_exec_time_nano_{};
+
+  /// @brief The minimum latency [ns].
+  std::vector<size_t> min_{};
+
+  /// @brief The maximum latency [ns].
+  std::vector<size_t> max_{};
 
   /// @brief The number of executions for each operations.
   std::vector<size_t> exec_nums_{};

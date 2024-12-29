@@ -28,11 +28,11 @@ namespace dbgroup::benchmark::component
 
 SimpleDDSketch::SimpleDDSketch(  //
     const size_t ops_num)
-    : bins_{ops_num, std::array<uint32_t, kBinNum>{}}
+    : min_(ops_num, ~0UL),
+      max_(ops_num, 0UL),
+      exec_nums_(ops_num, 0UL),
+      bins_(ops_num, std::array<uint32_t, kBinNum>{})
 {
-  for (size_t i = 0; i < ops_num; ++i) {
-    exec_nums_.emplace_back(0);
-  }
 }
 
 void
@@ -52,10 +52,23 @@ SimpleDDSketch::operator+=(  //
 }
 
 void
-SimpleDDSketch::AddLatency(  //
+SimpleDDSketch::Add(  //
     const size_t ops_id,
+    const size_t cnt,
     const size_t lat)
 {
+  total_exec_num_ += cnt;
+  total_exec_time_nano_ += lat;
+
+  auto &min = min_[ops_id];
+  if (lat < min) [[unlikely]] {
+    min = lat;
+  }
+  auto &max = max_[ops_id];
+  if (lat > max) [[unlikely]] {
+    max = lat;
+  }
+
   const auto pos = (lat == 0) ? 0 : static_cast<size_t>(std::ceil(std::log(lat) / denom_));
   ++bins_[ops_id][pos];
   ++exec_nums_[ops_id];
@@ -75,6 +88,9 @@ SimpleDDSketch::Quantile(  //
     const double q) const  //
     -> size_t
 {
+  if (q == 0) return min_[ops_id];
+  if (q >= 1.0) return max_[ops_id];
+
   const auto bound = static_cast<size_t>(q * static_cast<double>(exec_nums_[ops_id] - 1));
   size_t cnt = bins_[ops_id][0];
   size_t i = 0;

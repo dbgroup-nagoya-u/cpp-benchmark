@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Database Group, Nagoya University
+ * Copyright 2024 Database Group, Nagoya University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef CPP_BENCHMARK_TEST_COMMON_H_
-#define CPP_BENCHMARK_TEST_COMMON_H_
+#ifndef CPP_BENCHMARK_TEST_EXAMPLE_CONSTANTS_H_
+#define CPP_BENCHMARK_TEST_EXAMPLE_CONSTANTS_H_
 
 // C++ standard libraries
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 
-#endif  // CPP_BENCHMARK_TEST_COMMON_H_
+namespace dbgroup::example
+{
+/*############################################################################*
+ * Global constants
+ *############################################################################*/
+
+constexpr size_t kPageNum = 1024;
+
+constexpr size_t kMaxExecNum = 1e7;
+
+constexpr size_t kCachelineSize = 64;
+
+constexpr size_t kElementNum = kCachelineSize / sizeof(uint64_t);
+
+}  // namespace dbgroup::example
+
+#endif  // CPP_BENCHMARK_TEST_EXAMPLE_CONSTANTS_H_

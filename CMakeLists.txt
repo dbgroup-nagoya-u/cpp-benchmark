@@ -8,7 +8,7 @@ endif()
 # project information
 project(
   cpp_bench
-  VERSION "1.3.1"
+  VERSION "2.0.0"
   DESCRIPTION "A benchmarker library for C++ language."
   LANGUAGES "CXX"
 )
@@ -29,7 +29,7 @@ if(NOT TARGET dbgroup::${PROJECT_NAME})
   )
   add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
   target_compile_features(${PROJECT_NAME} PUBLIC
-    "cxx_std_17"
+    "cxx_std_20"
   )
   target_include_directories(${PROJECT_NAME} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
