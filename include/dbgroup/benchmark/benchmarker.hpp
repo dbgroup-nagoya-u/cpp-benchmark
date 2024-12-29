@@ -18,17 +18,14 @@
 #define DBGROUP_BENCHMARK_BENCHMARKER_HPP_
 
 // C++ standard libraries
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <cstddef>
 #include <cstdio>
 #include <future>
 #include <iomanip>
 #include <iostream>
 #include <memory>
-#include <mutex>
 #include <random>
 #include <string>
 #include <thread>
