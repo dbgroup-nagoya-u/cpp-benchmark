@@ -126,6 +126,7 @@ class Benchmarker
      * Preparation of benchmark workers
      *------------------------------------------------------------------------*/
     Log("...Prepare workers for benchmarking.");
+    is_running_.store(true, kRelaxed);
     ready_for_benchmarking_.store(false, kRelaxed);
     worker_cnt_.store(0, kRelaxed);
 
@@ -145,16 +146,18 @@ class Benchmarker
     /*--------------------------------------------------------------------------
      * Measuring throughput/latency
      *------------------------------------------------------------------------*/
-    Log("...Run workers.");
-    ready_for_benchmarking_.store(true, kRelaxed);
-
     std::vector<Sketch> results{};
     results.reserve(thread_num_);
+
+    Log("...Run workers.");
+    ready_for_benchmarking_.store(true, kRelaxed);
+    const auto &wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
+
     for (auto &&future : result_futures) {
-      const auto status = future.wait_for(timeout_in_sec_);
-      if (status != std::future_status::ready) {
+      const auto status = future.wait_until(wake_up);
+      if (status != std::future_status::ready && is_running_.load(kRelaxed)) {
         Log("...Interrupting workers.");
-        is_running_.store(false, std::memory_order_relaxed);
+        is_running_.store(false, kRelaxed);
       }
       results.emplace_back(future.get());
     }

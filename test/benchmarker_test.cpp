@@ -49,8 +49,6 @@ class BenchmarkerFixture : public ::testing::Test
   static constexpr size_t kRandomSeed = 0;
   static constexpr bool kThroughput = true;
   static constexpr bool kLatency = false;
-  static constexpr bool kOutText = false;
-  static constexpr size_t kTimeout = 100;
   static constexpr size_t kThreadNum = DBGROUP_TEST_THREAD_NUM;
 
   /*############################################################################
@@ -76,7 +74,7 @@ class BenchmarkerFixture : public ::testing::Test
       const size_t thread_num)
   {
     benchmarker_ = std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_,
-                                                   thread_num, kRandomSeed, kOutText, kTimeout);
+                                                   thread_num, kRandomSeed);
     benchmarker_->Run();
   }
 
