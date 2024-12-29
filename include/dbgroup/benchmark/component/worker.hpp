@@ -20,10 +20,7 @@
 // C++ standard libraries
 #include <atomic>
 #include <cstddef>
-#include <memory>
-#include <random>
 #include <utility>
-#include <vector>
 
 // local sources
 #include "dbgroup/benchmark/component/measurements.hpp"
@@ -40,7 +37,7 @@ namespace dbgroup::benchmark::component
  * @tparam Target An actual target implementation.
  * @tparam Operation A struct to perform each operation.
  */
-template <class Target, class Operation>
+template <class Target, class OperationEngine>
 class Worker
 {
  public:
@@ -53,14 +50,20 @@ class Worker
    *
    * @param target A referene to a target implementation.
    * @param operations Operation data to be performed by this worker.
+   * @param is_running A flag for monitoring benchmarker's status.
    */
   Worker(  //
       Target &target,
-      const std::vector<Operation> &&operations,
-      const size_t ops_num)
-      : target_{target}, operations_{operations}
+      OperationEngine &ops_engine,
+      const std::atomic_bool &is_running,
+      const size_t thread_id,
+      const size_t rand_seed)
+      : target_{target},
+        ops_engine_{ops_engine},
+        iter_{ops_engine_.GetOPIter(thread_id, rand_seed)},
+        is_running_{is_running},
+        sketch_{OperationEngine::OPType::kTotalNum}
   {
-    sketch_ = std::make_unique<SimpleDDSketch>(ops_num);
     target_.SetUpForWorker();
   }
 
@@ -87,44 +90,36 @@ class Worker
   /**
    * @brief Measure and store execution time for each operation.
    *
-   * @param is_running A flag for monitoring benchmarker's status.
    */
   void
-  MeasureLatency(  //
-      const std::atomic_bool &is_running)
+  MeasureLatency()
   {
-    for (auto &&ops : operations_) {
+    for (; iter_ && is_running_.load(kRelaxed); ++iter_) {
+      const auto &[type, op] = *iter_;
       stopwatch_.Start();
-
-      target_.Execute(ops);
-
+      target_.Execute(type, op);
       stopwatch_.Stop();
-      sketch_->AddLatency(ops.GetOpsID(), stopwatch_.GetNanoDuration());
-
-      if (!is_running.load(std::memory_order_relaxed)) break;
+      sketch_.AddLatency(type, stopwatch_.GetNanoDuration());
     }
   }
 
   /**
    * @brief Measure and store total execution time.
    *
-   * @param is_running A flag for monitoring benchmarker's status.
    */
   void
-  MeasureThroughput(  //
-      const std::atomic_bool &is_running)
+  MeasureThroughput()
   {
+    size_t cnt = 0;
     stopwatch_.Start();
-
-    size_t executed_num = 0;
-    for (auto &&ops : operations_) {
-      executed_num += target_.Execute(ops);
-      if (!is_running.load(std::memory_order_relaxed)) break;
+    for (; iter_ && is_running_.load(kRelaxed); ++iter_) {
+      const auto &[type, op] = *iter_;
+      cnt += target_.Execute(type, op);
     }
-
     stopwatch_.Stop();
-    sketch_->SetTotalExecNum(executed_num);
-    sketch_->SetTotalExecTime(stopwatch_.GetNanoDuration());
+
+    sketch_.SetTotalExecNum(cnt);
+    sketch_.SetTotalExecTime(stopwatch_.GetNanoDuration());
   }
 
   /**
@@ -133,13 +128,20 @@ class Worker
    * @return Measurement results.
    */
   auto
-  MoveMeasurements()  //
-      -> std::unique_ptr<SimpleDDSketch>
+  MoveSketch()  //
+      -> SimpleDDSketch
   {
     return std::move(sketch_);
   }
 
  private:
+  /*############################################################################
+   * Internal constants
+   *##########################################################################*/
+
+  /// @brief The alias of `std::memory_order_relaxed`.
+  static constexpr auto kRelaxed = std::memory_order_relaxed;
+
   /*############################################################################
    * Internal member variables
    *##########################################################################*/
@@ -148,10 +150,15 @@ class Worker
   Target &target_{};
 
   /// @brief Operation data to be executed by this worker.
-  const std::vector<Operation> operations_{};
+  OperationEngine &ops_engine_{};
+
+  /// @brief The iterator of an operation queue.
+  OperationEngine::OPIter iter_{};
+
+  const std::atomic_bool &is_running_{};
 
   /// @brief Measurement results.
-  std::unique_ptr<SimpleDDSketch> sketch_{nullptr};
+  SimpleDDSketch sketch_{};
 
   /// @brief A stopwatch to measure execution time.
   StopWatch stopwatch_{};

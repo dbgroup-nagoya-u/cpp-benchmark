@@ -48,16 +48,16 @@ namespace dbgroup::benchmark
  * @tparam Operation A struct to perform each operation.
  * @tparam OperationEngine A class to generate operations.
  */
-template <class Target, class Operation, class OperationEngine>
+template <class Target, class OperationEngine>
 class Benchmarker
 {
   /*############################################################################
    * Type aliases
    *##########################################################################*/
 
-  using Worker_t = component::Worker<Target, Operation>;
-  using Worker_p = std::unique_ptr<Worker_t>;
-  using Result_p = std::unique_ptr<component::SimpleDDSketch>;
+  using Worker = component::Worker<Target, OperationEngine>;
+  using Worker_p = std::unique_ptr<Worker>;
+  using Sketch = component::SimpleDDSketch;
 
  public:
   /*############################################################################
@@ -70,9 +70,8 @@ class Benchmarker
    * @param bench_target A reference to an actual target implementation.
    * @param target_name The name of a benchmarking target.
    * @param ops_engine A reference to a operation generator.
-   * @param exec_num The number of executions of each worker.
    * @param thread_num The number of worker threads.
-   * @param random_seed A base random seed.
+   * @param rand_seed A base random seed.
    * @param measure_throughput A flag for measuring throughput (true) or latency (false).
    * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
    * @param timeout_in_sec Seconds to timeout.
@@ -82,22 +81,19 @@ class Benchmarker
       Target &bench_target,
       const std::string &target_name,
       OperationEngine &ops_engine,
-      const size_t exec_num,
-      const size_t thread_num,
-      const size_t random_seed,
-      const bool measure_throughput,
-      const bool output_as_csv,
-      const size_t timeout_in_sec,
+      const size_t thread_num = 1,
+      const size_t rand_seed = std::random_device{}(),
+      const bool measure_throughput = true,
+      const bool output_as_csv = false,
+      const size_t timeout_in_sec = 10,
       std::vector<double> target_latency = kDefaultLatency)
-      : exec_num_{exec_num},
-        thread_num_{thread_num},
-        random_seed_{random_seed},
+      : thread_num_{thread_num},
+        random_seed_{rand_seed},
         measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
         target_latency_{std::move(target_latency)},
         bench_target_{bench_target},
         ops_engine_{ops_engine},
-        ops_type_num_{ops_engine_.GetOpsTypeNum()},
         timeout_in_sec_{timeout_in_sec}
   {
     Log("*** START " + target_name + " ***");
@@ -137,19 +133,19 @@ class Benchmarker
     ready_for_benchmarking_ = false;
 
     std::vector<std::future<void>> prepare_futures{};
-    std::vector<std::future<Result_p>> result_futures{};
+    std::vector<std::future<Sketch>> result_futures{};
 
     // create workers in each thread
     std::mt19937_64 rand{random_seed_};
     for (size_t i = 0; i < thread_num_; ++i) {
       // create promises to manage multi-threaded benchmarking
       std::promise<void> pre_p{};
-      std::promise<Result_p> res_p{};
+      std::promise<Sketch> res_p{};
       prepare_futures.emplace_back(pre_p.get_future());
       result_futures.emplace_back(res_p.get_future());
 
       // create a worker thread
-      std::thread t{&Benchmarker::RunWorker, this, std::move(pre_p), std::move(res_p), rand()};
+      std::thread t{&Benchmarker::RunWorker, this, std::move(pre_p), std::move(res_p), i, rand()};
       t.detach();
     }
 
@@ -169,7 +165,7 @@ class Benchmarker
     }
     cond_.notify_all();
 
-    std::vector<Result_p> results{};
+    std::vector<Sketch> results{};
     results.reserve(thread_num_);
     for (auto &&future : result_futures) {
       const auto status = future.wait_for(timeout_in_sec_);
@@ -185,15 +181,15 @@ class Benchmarker
      *------------------------------------------------------------------------*/
     Log("...Finish running.");
 
-    auto &&result = results[0];
+    auto &&sketch = results[0];
     for (size_t i = 1; i < thread_num_; ++i) {
-      *result += *(results[i]);
+      sketch += results[i];
     }
 
     if (measure_throughput_) {
-      LogThroughput(result);
+      LogThroughput(sketch);
     } else {
-      LogLatency(result);
+      LogLatency(sketch);
     }
   }
 
@@ -218,18 +214,17 @@ class Benchmarker
    *
    * @param result_p A promise for notifying a worker is prepared.
    * @param result_p A promise of a worker pointer that holds benchmarking results.
-   * @param random_seed A random seed.
+   * @param rand_seed A random seed.
    */
   void
   RunWorker(  //
       std::promise<void> prepare_p,
-      std::promise<Result_p> result_p,
-      const size_t random_seed)
+      std::promise<Sketch> result_p,
+      const size_t thread_id,
+      const size_t rand_seed)
   {
     // prepare a worker
-    Worker_p worker{nullptr};
-    auto &&operations = ops_engine_.Generate(exec_num_, random_seed);
-    worker = std::make_unique<Worker_t>(bench_target_, std::move(operations), ops_type_num_);
+    Worker worker{bench_target_, ops_engine_, is_running_, thread_id, rand_seed};
 
     // the preparation has finished, so wait other workers
     {
@@ -240,12 +235,12 @@ class Benchmarker
 
     // start when all workers are ready for benchmarking
     if (measure_throughput_) {
-      worker->MeasureThroughput(is_running_);
+      worker.MeasureThroughput();
     } else {
-      worker->MeasureLatency(is_running_);
+      worker.MeasureLatency();
     }
 
-    result_p.set_value_at_thread_exit(worker->MoveMeasurements());
+    result_p.set_value_at_thread_exit(worker.MoveSketch());
   }
 
   /**
@@ -255,10 +250,10 @@ class Benchmarker
    */
   void
   LogThroughput(  //
-      const Result_p &result) const
+      const Sketch &sketch) const
   {
-    const size_t exec_num = result->GetTotalExecNum();
-    const size_t avg_nano_time = result->GetTotalExecTime() / thread_num_;
+    const size_t exec_num = sketch.GetTotalExecNum();
+    const size_t avg_nano_time = sketch.GetTotalExecTime() / thread_num_;
     const double throughput = static_cast<double>(exec_num) / (avg_nano_time / 1E9);
 
     if (output_as_csv_) {
@@ -275,17 +270,17 @@ class Benchmarker
    */
   void
   LogLatency(  //
-      const Result_p &result) const
+      const Sketch &sketch) const
   {
     Log("Percentiled Latency [ns]:");
-    for (size_t id = 0; id < ops_type_num_; ++id) {
-      if (!result->HasLatency(id)) continue;
+    for (size_t id = 0; id < OperationEngine::OPType::kTotalNum; ++id) {
+      if (!sketch.HasLatency(id)) continue;
       Log(" Ops ID[" + std::to_string(id) + "]:");
       for (auto &&q : target_latency_) {
         if (!output_as_csv_) {
-          std::printf("  %6.2f: %12lu\n", 100 * q, result->Quantile(id, q));  // NOLINT
+          std::printf("  %6.2f: %12lu\n", 100 * q, sketch.Quantile(id, q));  // NOLINT
         } else {
-          std::cout << id << "," << q << "," << result->Quantile(id, q) << "\n";
+          std::cout << id << "," << q << "," << sketch.Quantile(id, q) << "\n";
         }
       }
     }
@@ -309,9 +304,6 @@ class Benchmarker
    * Internal member variables
    *##########################################################################*/
 
-  /// @brief The number of executions of each worker.
-  const size_t exec_num_{};
-
   /// @brief The number of worker threads.
   const size_t thread_num_{};
 
@@ -332,9 +324,6 @@ class Benchmarker
 
   /// @brief An target operation generator.
   OperationEngine &ops_engine_{};
-
-  /// @brief The number operation types.
-  size_t ops_type_num_{};
 
   /// @brief An exclusive mutex for waking up worker threads.
   std::mutex x_mtx_{};
