@@ -127,40 +127,27 @@ class Benchmarker
      * Preparation of benchmark workers
      *------------------------------------------------------------------------*/
     Log("...Prepare workers for benchmarking.");
-    ready_for_benchmarking_ = false;
+    ready_for_benchmarking_.store(false, kRelaxed);
+    worker_cnt_.store(0, kRelaxed);
 
-    std::vector<std::future<void>> prepare_futures{};
     std::vector<std::future<Sketch>> result_futures{};
 
     // create workers in each thread
     std::mt19937_64 rand{random_seed_};
     for (size_t i = 0; i < thread_num_; ++i) {
-      // create promises to manage multi-threaded benchmarking
-      std::promise<void> pre_p{};
       std::promise<Sketch> res_p{};
-      prepare_futures.emplace_back(pre_p.get_future());
       result_futures.emplace_back(res_p.get_future());
-
-      // create a worker thread
-      std::thread t{&Benchmarker::RunWorker, this, std::move(pre_p), std::move(res_p), i, rand()};
-      t.detach();
+      std::thread{&Benchmarker::RunWorker, this, std::move(res_p), i, rand()}.detach();
     }
-
-    // wait for all workers to be created
-    for (auto &&future : prepare_futures) {
-      future.get();
+    while (worker_cnt_.load(kRelaxed) < thread_num_) {
+      // wait for all workers to be created
     }
 
     /*--------------------------------------------------------------------------
      * Measuring throughput/latency
      *------------------------------------------------------------------------*/
     Log("...Run workers.");
-
-    {
-      const std::lock_guard x_guard{x_mtx_};
-      ready_for_benchmarking_ = true;
-    }
-    cond_.notify_all();
+    ready_for_benchmarking_.store(true, kRelaxed);
 
     std::vector<Sketch> results{};
     results.reserve(thread_num_);
@@ -192,8 +179,8 @@ class Benchmarker
    * Internal constants
    *##########################################################################*/
 
-  /// @brief Limit the target of latency calculation.
-  static constexpr size_t kMaxLatencyNum = 1e6;
+  /// @brief The alias of `std::memory_order_relaxed`.
+  static constexpr auto kRelaxed = std::memory_order_relaxed;
 
   /// @brief Targets for calculating parcentile latency.
   static constexpr auto kDefaultLatency  //
@@ -206,30 +193,23 @@ class Benchmarker
   /**
    * @brief Run a worker thread to measure throughput or latency.
    *
-   * @param result_p A promise for notifying a worker is prepared.
    * @param result_p A promise of a worker pointer that holds benchmarking results.
+   * @param thread_id A unique thread ID.
    * @param rand_seed A random seed.
    */
   void
   RunWorker(  //
-      std::promise<void> prepare_p,
       std::promise<Sketch> result_p,
       const size_t thread_id,
       const size_t rand_seed)
   {
-    // prepare a worker
     Worker worker{bench_target_, ops_engine_, is_running_, thread_id, rand_seed};
-
-    // the preparation has finished, so wait other workers
-    {
-      std::unique_lock lock{x_mtx_};
-      prepare_p.set_value();  // notify the main thread of the complete of preparation
-      cond_.wait(lock, [this] { return ready_for_benchmarking_; });
+    worker_cnt_.fetch_add(1, kRelaxed);
+    while (!ready_for_benchmarking_.load(kRelaxed)) {
+      // the preparation has finished, so wait other workers
     }
 
-    // start when all workers are ready for benchmarking
     worker.Measure();
-
     result_p.set_value_at_thread_exit(worker.MoveSketch());
   }
 
@@ -312,20 +292,16 @@ class Benchmarker
   /// @brief An target operation generator.
   OperationEngine &ops_engine_{};
 
-  /// @brief An exclusive mutex for waking up worker threads.
-  std::mutex x_mtx_{};
-
-  /// @brief A conditional variable for waking up worker threads.
-  std::condition_variable cond_{};
-
   /// @brief A flag for interrupting workers.
   std::atomic_bool is_running_{true};
 
   /// @brief Seconds to timeout.
   std::chrono::seconds timeout_in_sec_{};
 
+  std::atomic_size_t worker_cnt_{};
+
   /// @brief A flag for waking up worker threads.
-  bool ready_for_benchmarking_{false};
+  std::atomic_bool ready_for_benchmarking_{false};
 };
 
 }  // namespace dbgroup::benchmark
