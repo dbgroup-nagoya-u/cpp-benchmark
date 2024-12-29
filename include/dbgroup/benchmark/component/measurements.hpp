@@ -163,6 +163,12 @@ class SimpleDDSketch
   /// @brief Total execution time [ns].
   size_t total_exec_time_nano_{};
 
+  /// @brief The minimum latency [ns].
+  std::vector<size_t> min_{};
+
+  /// @brief The maximum latency [ns].
+  std::vector<size_t> max_{};
+
   /// @brief The number of executions for each operations.
   std::vector<size_t> exec_nums_{};
 
