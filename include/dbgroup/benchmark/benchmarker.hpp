@@ -72,6 +72,7 @@ class Benchmarker
    * @param thread_num The number of worker threads.
    * @param rand_seed A base random seed.
    * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
+   * @param measure_throughput A flag for measuring throughput (true) or latency (false).
    * @param timeout_in_sec Seconds to timeout.
    * @param target_latency A set of percentiles for measuring latency.
    */
@@ -82,11 +83,13 @@ class Benchmarker
       const size_t thread_num = 1,
       const size_t rand_seed = std::random_device{}(),
       const bool output_as_csv = false,
+      const bool measure_throughput = true,
       const size_t timeout_in_sec = 10,
       std::vector<double> target_latency = kDefaultLatency)
       : thread_num_{thread_num},
         random_seed_{rand_seed},
         output_as_csv_{output_as_csv},
+        measure_throughput_{measure_throughput},
         target_latency_{std::move(target_latency)},
         bench_target_{bench_target},
         ops_engine_{ops_engine},
@@ -225,6 +228,8 @@ class Benchmarker
   LogThroughput(  //
       const Sketch &sketch) const
   {
+    if (output_as_csv_ && !measure_throughput_) return;
+
     const size_t exec_num = sketch.GetTotalExecNum();
     const size_t avg_nano_time = sketch.GetTotalExecTime() / thread_num_;
     const double throughput = static_cast<double>(exec_num) / (avg_nano_time / 1E9);
@@ -245,6 +250,8 @@ class Benchmarker
   LogLatency(  //
       const Sketch &sketch) const
   {
+    if (output_as_csv_ && measure_throughput_) return;
+
     Log("Percentile Latency [ns]:");
     for (size_t id = 0; id < OperationEngine::OPType::kTotalNum; ++id) {
       if (!sketch.HasLatency(id)) continue;
@@ -285,6 +292,9 @@ class Benchmarker
 
   /// @brief A flat to output measured results as CSV or TXT.
   const bool output_as_csv_{};
+
+  /// @brief A flag to measure throughput (if true) or latency (if false).
+  const bool measure_throughput_{};
 
   /// @brief Targets for calculating parcentile latency.
   std::vector<double> target_latency_{};
