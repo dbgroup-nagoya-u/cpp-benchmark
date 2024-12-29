@@ -17,38 +17,35 @@
 #include "dbgroup/benchmark/benchmarker.hpp"
 
 // C++ standard libraries
-#include <atomic>
 #include <cstddef>
 #include <memory>
-#include <mutex>
+#include <shared_mutex>
 
 // external sources
 #include "gtest/gtest.h"
 
 // local sources
-#include "sample_operation.hpp"
-#include "sample_operation_engine.hpp"
-#include "sample_target.hpp"
+#include "operation_engine.hpp"
+#include "target.hpp"
 
 namespace dbgroup::benchmark::test
 {
-template <class Implementation>
+template <class Competitor>
 class BenchmarkerFixture : public ::testing::Test
 {
   /*############################################################################
    * Type aliases
    *##########################################################################*/
 
-  using Target_t = SampleTarget<Implementation>;
-  using Worker_t = component::Worker<Target_t, SampleOperation>;
-  using Benchmarker_t = Benchmarker<Target_t, SampleOperation, SampleOperationEngine>;
+  using Target = ::dbgroup::example::Target<Competitor>;
+  using OperationEngine = ::dbgroup::example::OperationEngine;
+  using Benchmarker_t = Benchmarker<Target, OperationEngine>;
 
  protected:
   /*############################################################################
    * Constants
    *##########################################################################*/
 
-  static constexpr size_t kExecNum = 1e6;
   static constexpr size_t kRandomSeed = 0;
   static constexpr bool kThroughput = true;
   static constexpr bool kLatency = false;
@@ -79,8 +76,8 @@ class BenchmarkerFixture : public ::testing::Test
       const size_t thread_num)
   {
     benchmarker_ =
-        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
-                                        thread_num, kRandomSeed, kThroughput, kOutText, kTimeout);
+        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, thread_num,
+                                        kRandomSeed, kThroughput, kOutText, kTimeout);
     benchmarker_->Run();
   }
 
@@ -89,8 +86,8 @@ class BenchmarkerFixture : public ::testing::Test
       const size_t thread_num)
   {
     benchmarker_ =
-        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, kExecNum,
-                                        thread_num, kRandomSeed, kLatency, kOutText, kTimeout);
+        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, thread_num,
+                                        kRandomSeed, kLatency, kOutText, kTimeout);
     benchmarker_->Run();
   }
 
@@ -99,9 +96,9 @@ class BenchmarkerFixture : public ::testing::Test
    * Internal member variables
    *##########################################################################*/
 
-  Target_t target_{};
+  Target target_{};
 
-  SampleOperationEngine ops_engine_{};
+  OperationEngine ops_engine_{};
 
   std::unique_ptr<Benchmarker_t> benchmarker_{};
 };
@@ -110,8 +107,12 @@ class BenchmarkerFixture : public ::testing::Test
  * Preparation for typed testing
  *############################################################################*/
 
-using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
-TYPED_TEST_SUITE(BenchmarkerFixture, Implementations);
+using Competitors = ::testing::Types<  //
+    std::shared_mutex,                 //
+    example::BackOffLock,              //
+    example::MCSLock,                  //
+    example::OptimisticLock>;
+TYPED_TEST_SUITE(BenchmarkerFixture, Competitors);
 
 /*##############################################################################
  * Unit test definitions

@@ -20,29 +20,30 @@
 #include <atomic>
 #include <cstddef>
 #include <memory>
+#include <shared_mutex>
 
-// external sources
+// external libraries
 #include "gtest/gtest.h"
 
 // library headers
 #include "dbgroup/benchmark/component/stopwatch.hpp"
 
 // local sources
-#include "sample_operation.hpp"
-#include "sample_operation_engine.hpp"
-#include "sample_target.hpp"
+#include "operation_engine.hpp"
+#include "target.hpp"
 
 namespace dbgroup::benchmark::component::test
 {
-template <class Implementation>
+template <class Competitor>
 class WorkerFixture : public ::testing::Test
 {
   /*############################################################################
    * Type aliases
    *##########################################################################*/
 
-  using Target_t = SampleTarget<Implementation>;
-  using Worker_t = Worker<Target_t, SampleOperation>;
+  using Target = ::dbgroup::example::Target<Competitor>;
+  using OperationEngine = ::dbgroup::example::OperationEngine;
+  using TestWorker = Worker<Target, OperationEngine>;
 
  protected:
   /*############################################################################
@@ -52,13 +53,14 @@ class WorkerFixture : public ::testing::Test
   void
   SetUp() override
   {
-    worker_ = std::make_unique<Worker_t>(target_,
-                                         SampleOperationEngine::Generate(kExecNum, kRandomSeed), 1);
+    is_running_ = true;
+    worker_ = std::make_unique<TestWorker>(target_, ops_engine_, is_running_, 0, kRandomSeed);
   }
 
   void
   TearDown() override
   {
+    worker_ = nullptr;
   }
 
   /*############################################################################
@@ -68,39 +70,31 @@ class WorkerFixture : public ::testing::Test
   void
   VerifyMeasureThroughput()
   {
-    const std::atomic_bool is_running{true};
     stopwatch_.Start();
-    worker_->MeasureThroughput(is_running);
+    worker_->MeasureThroughput();
     stopwatch_.Stop();
 
     // check the total execution time is reasonable
     const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
-    const auto &results = worker_->MoveMeasurements();
-    EXPECT_GE(results->GetTotalExecTime(), 0);
-    EXPECT_LE(results->GetTotalExecTime(), wrapperred_exec_time);
-
-    // check the worker performs all the operations
-    EXPECT_EQ(kExecNum, target_.GetSum());
+    const auto &sketch = worker_->MoveSketch();
+    EXPECT_GE(sketch.GetTotalExecTime(), 0);
+    EXPECT_LE(sketch.GetTotalExecTime(), wrapperred_exec_time);
   }
 
   void
   VerifyMeasureLatency()
   {
-    const std::atomic_bool is_running{true};
     stopwatch_.Start();
-    worker_->MeasureLatency(is_running);
+    worker_->MeasureLatency();
     stopwatch_.Stop();
 
-    const auto &results = worker_->MoveMeasurements();
-    auto prev = results->Quantile(0, 0);
+    const auto &sketch = worker_->MoveSketch();
+    auto prev = sketch.Quantile(0, 0);
     for (size_t i = 1; i < 100; ++i) {  // NOLINT
-      auto cur = results->Quantile(0, i);
+      auto cur = sketch.Quantile(0, i);
       EXPECT_LE(prev, cur);
       prev = cur;
     }
-
-    // check the worker performs all the operations
-    EXPECT_EQ(kExecNum, target_.GetSum());
   }
 
  private:
@@ -108,17 +102,19 @@ class WorkerFixture : public ::testing::Test
    * Internal constants
    *##########################################################################*/
 
-  static constexpr size_t kExecNum = 1e3;
-  static constexpr double kSampleNum = 1e2;
   static constexpr size_t kRandomSeed = 0;
 
   /*############################################################################
    * Internal member variables
    *##########################################################################*/
 
-  Target_t target_{};
+  Target target_{};
 
-  std::unique_ptr<Worker_t> worker_{};
+  OperationEngine ops_engine_{};
+
+  std::atomic_bool is_running_{};
+
+  std::unique_ptr<TestWorker> worker_{};
 
   StopWatch stopwatch_{};
 };
@@ -127,8 +123,12 @@ class WorkerFixture : public ::testing::Test
  * Preparation for typed testing
  *############################################################################*/
 
-using Implementations = ::testing::Types<std::mutex, std::atomic_size_t>;
-TYPED_TEST_SUITE(WorkerFixture, Implementations);
+using Competitors = ::testing::Types<  //
+    std::shared_mutex,                 //
+    example::BackOffLock,              //
+    example::MCSLock,                  //
+    example::OptimisticLock>;
+TYPED_TEST_SUITE(WorkerFixture, Competitors);
 
 /*##############################################################################
  * Unit test definitions
