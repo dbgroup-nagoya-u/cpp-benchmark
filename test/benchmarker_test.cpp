@@ -72,22 +72,11 @@ class BenchmarkerFixture : public ::testing::Test
    *##########################################################################*/
 
   void
-  VerifyMeasureThroughput(  //
+  VerifyRunBench(  //
       const size_t thread_num)
   {
-    benchmarker_ =
-        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, thread_num,
-                                        kRandomSeed, kThroughput, kOutText, kTimeout);
-    benchmarker_->Run();
-  }
-
-  void
-  VerifyMeasureLatency(  //
-      const size_t thread_num)
-  {
-    benchmarker_ =
-        std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_, thread_num,
-                                        kRandomSeed, kLatency, kOutText, kTimeout);
+    benchmarker_ = std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_,
+                                                   thread_num, kRandomSeed, kOutText, kTimeout);
     benchmarker_->Run();
   }
 
@@ -118,24 +107,14 @@ TYPED_TEST_SUITE(BenchmarkerFixture, Competitors);
  * Unit test definitions
  *############################################################################*/
 
-TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithSingleWorkerSucceed)
-{
-  TestFixture::VerifyMeasureThroughput(1);
+TYPED_TEST(BenchmarkerFixture, RunBenchWithSingleWorkerSucceed)
+{  //
+  TestFixture::VerifyRunBench(1);
 }
 
-TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithSingleWorkerSucceed)
+TYPED_TEST(BenchmarkerFixture, RunBenchWithMultiWorkersSucceed)
 {
-  TestFixture::VerifyMeasureLatency(1);
-}
-
-TYPED_TEST(BenchmarkerFixture, RunForMeasuringThroughputWithMultiWorkersSucceed)
-{
-  TestFixture::VerifyMeasureThroughput(TestFixture::kThreadNum);
-}
-
-TYPED_TEST(BenchmarkerFixture, RunForMeasuringLatencyWithMultiWorkersSucceed)
-{
-  TestFixture::VerifyMeasureLatency(TestFixture::kThreadNum);
+  TestFixture::VerifyRunBench(TestFixture::kThreadNum);
 }
 
 }  // namespace dbgroup::benchmark::test

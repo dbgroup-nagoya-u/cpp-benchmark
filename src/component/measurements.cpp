@@ -52,10 +52,14 @@ SimpleDDSketch::operator+=(  //
 }
 
 void
-SimpleDDSketch::AddLatency(  //
+SimpleDDSketch::Add(  //
     const size_t ops_id,
+    const size_t cnt,
     const size_t lat)
 {
+  total_exec_num_ += cnt;
+  total_exec_time_nano_ += lat;
+
   const auto pos = (lat == 0) ? 0 : static_cast<size_t>(std::ceil(std::log(lat) / denom_));
   ++bins_[ops_id][pos];
   ++exec_nums_[ops_id];

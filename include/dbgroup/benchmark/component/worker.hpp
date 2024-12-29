@@ -92,34 +92,15 @@ class Worker
    *
    */
   void
-  MeasureLatency()
+  Measure()
   {
     for (; iter_ && is_running_.load(kRelaxed); ++iter_) {
       const auto &[type, op] = *iter_;
       stopwatch_.Start();
-      target_.Execute(type, op);
+      const auto cnt = target_.Execute(type, op);
       stopwatch_.Stop();
-      sketch_.AddLatency(type, stopwatch_.GetNanoDuration());
+      sketch_.Add(type, cnt, stopwatch_.GetNanoDuration());
     }
-  }
-
-  /**
-   * @brief Measure and store total execution time.
-   *
-   */
-  void
-  MeasureThroughput()
-  {
-    size_t cnt = 0;
-    stopwatch_.Start();
-    for (; iter_ && is_running_.load(kRelaxed); ++iter_) {
-      const auto &[type, op] = *iter_;
-      cnt += target_.Execute(type, op);
-    }
-    stopwatch_.Stop();
-
-    sketch_.SetTotalExecNum(cnt);
-    sketch_.SetTotalExecTime(stopwatch_.GetNanoDuration());
   }
 
   /**

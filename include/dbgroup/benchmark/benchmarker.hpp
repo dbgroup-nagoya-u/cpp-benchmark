@@ -72,7 +72,6 @@ class Benchmarker
    * @param ops_engine A reference to a operation generator.
    * @param thread_num The number of worker threads.
    * @param rand_seed A base random seed.
-   * @param measure_throughput A flag for measuring throughput (true) or latency (false).
    * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
    * @param timeout_in_sec Seconds to timeout.
    * @param target_latency A set of percentiles for measuring latency.
@@ -83,13 +82,11 @@ class Benchmarker
       OperationEngine &ops_engine,
       const size_t thread_num = 1,
       const size_t rand_seed = std::random_device{}(),
-      const bool measure_throughput = true,
       const bool output_as_csv = false,
       const size_t timeout_in_sec = 10,
       std::vector<double> target_latency = kDefaultLatency)
       : thread_num_{thread_num},
         random_seed_{rand_seed},
-        measure_throughput_{measure_throughput},
         output_as_csv_{output_as_csv},
         target_latency_{std::move(target_latency)},
         bench_target_{bench_target},
@@ -186,11 +183,8 @@ class Benchmarker
       sketch += results[i];
     }
 
-    if (measure_throughput_) {
-      LogThroughput(sketch);
-    } else {
-      LogLatency(sketch);
-    }
+    LogThroughput(sketch);
+    LogLatency(sketch);
   }
 
  private:
@@ -234,11 +228,7 @@ class Benchmarker
     }
 
     // start when all workers are ready for benchmarking
-    if (measure_throughput_) {
-      worker.MeasureThroughput();
-    } else {
-      worker.MeasureLatency();
-    }
+    worker.Measure();
 
     result_p.set_value_at_thread_exit(worker.MoveSketch());
   }
@@ -259,7 +249,7 @@ class Benchmarker
     if (output_as_csv_) {
       std::cout << throughput << "\n";
     } else {
-      std::cout << "Throughput [Ops/s]: " << throughput << "\n";
+      std::cout << "Throughput [OPS/s]: " << throughput << "\n";
     }
   }
 
@@ -272,10 +262,10 @@ class Benchmarker
   LogLatency(  //
       const Sketch &sketch) const
   {
-    Log("Percentiled Latency [ns]:");
+    Log("Percentile Latency [ns]:");
     for (size_t id = 0; id < OperationEngine::OPType::kTotalNum; ++id) {
       if (!sketch.HasLatency(id)) continue;
-      Log(" Ops ID[" + std::to_string(id) + "]:");
+      Log(" OPS ID " + std::to_string(id) + ":");
       for (auto &&q : target_latency_) {
         if (!output_as_csv_) {
           std::printf("  %6.2f: %12lu\n", 100 * q, sketch.Quantile(id, q));  // NOLINT
@@ -309,9 +299,6 @@ class Benchmarker
 
   /// @brief A base random seed.
   const size_t random_seed_{};
-
-  /// @brief A flag to measure throughput (if true) or latency (if false).
-  const bool measure_throughput_{};
 
   /// @brief A flat to output measured results as CSV or TXT.
   const bool output_as_csv_{};

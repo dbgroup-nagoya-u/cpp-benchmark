@@ -68,27 +68,18 @@ class WorkerFixture : public ::testing::Test
    *##########################################################################*/
 
   void
-  VerifyMeasureThroughput()
+  VerifyMeasure()
   {
     stopwatch_.Start();
-    worker_->MeasureThroughput();
+    worker_->Measure();
     stopwatch_.Stop();
 
-    // check the total execution time is reasonable
-    const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
     const auto &sketch = worker_->MoveSketch();
+
+    const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
     EXPECT_GE(sketch.GetTotalExecTime(), 0);
     EXPECT_LE(sketch.GetTotalExecTime(), wrapperred_exec_time);
-  }
 
-  void
-  VerifyMeasureLatency()
-  {
-    stopwatch_.Start();
-    worker_->MeasureLatency();
-    stopwatch_.Stop();
-
-    const auto &sketch = worker_->MoveSketch();
     auto prev = sketch.Quantile(0, 0);
     for (size_t i = 1; i < 100; ++i) {  // NOLINT
       auto cur = sketch.Quantile(0, i);
@@ -134,14 +125,9 @@ TYPED_TEST_SUITE(WorkerFixture, Competitors);
  * Unit test definitions
  *############################################################################*/
 
-TYPED_TEST(WorkerFixture, MeasureThroughputWithSampleIncrementorMeasureReasonableExecutionTime)
+TYPED_TEST(WorkerFixture, MeasureWithSampleIncrementorMeasureReasonableResults)
 {
-  TestFixture::VerifyMeasureThroughput();
-}
-
-TYPED_TEST(WorkerFixture, MeasureLatencyWithSampleIncrementorMeasureReasonableLatency)
-{
-  TestFixture::VerifyMeasureLatency();
+  TestFixture::VerifyMeasure();
 }
 
 }  // namespace dbgroup::benchmark::component::test
