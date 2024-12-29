@@ -56,7 +56,6 @@ class Benchmarker
    *##########################################################################*/
 
   using Worker = component::Worker<Target, OperationEngine>;
-  using Worker_p = std::unique_ptr<Worker>;
   using Sketch = component::SimpleDDSketch;
 
  public:
@@ -110,7 +109,7 @@ class Benchmarker
    * @brief Destroy the Benchmarker object.
    *
    */
-  ~Benchmarker() { Log("*** FINISH ***\n"); }
+  ~Benchmarker() = default;
 
   /*############################################################################
    * Public utility functions
@@ -172,6 +171,7 @@ class Benchmarker
 
     LogThroughput(sketch);
     LogLatency(sketch);
+    Log("*** FINISH ***\n");
   }
 
  private:
@@ -210,7 +210,7 @@ class Benchmarker
     }
 
     worker.Measure();
-    result_p.set_value_at_thread_exit(worker.MoveSketch());
+    result_p.set_value(worker.MoveSketch());
   }
 
   /**
