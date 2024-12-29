@@ -94,7 +94,7 @@ class Worker
   void
   Measure()
   {
-    for (; iter_ && is_running_.load(kRelaxed); ++iter_) {
+    for (; iter_ && is_running_.load(kRelaxed); ++iter_) [[likely]] {
       const auto &[type, op] = *iter_;
       stopwatch_.Start();
       const auto cnt = target_.Execute(type, op);

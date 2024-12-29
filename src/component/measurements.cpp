@@ -61,11 +61,11 @@ SimpleDDSketch::Add(  //
   total_exec_time_nano_ += lat;
 
   auto &min = min_[ops_id];
-  if (lat < min) {
+  if (lat < min) [[unlikely]] {
     min = lat;
   }
   auto &max = max_[ops_id];
-  if (lat > max) {
+  if (lat > max) [[unlikely]] {
     max = lat;
   }
 
