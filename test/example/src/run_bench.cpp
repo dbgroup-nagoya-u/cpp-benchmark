@@ -33,10 +33,18 @@ main(  //
   using Target = ::dbgroup::example::Target<std::shared_mutex>;
   using OperationEngine = ::dbgroup::example::OperationEngine;
   using Benchmarker = ::dbgroup::benchmark::Benchmarker<Target, OperationEngine>;
+  using Builder = typename Benchmarker::Builder;
 
   Target target{};
   OperationEngine op_engine{};
-  Benchmarker{target, "std::shared_mutex", op_engine}.Run();
+  Builder builder{target, "std::shared_mutex", op_engine};
+  // builder.SetThreadNum(...);
+  // builder.SetTargetLatency(...);
+  // builder.SetTimeOut(...);
+  // builder.SetRandomSeed(...);
+  // builder.OutputAsCSV(...);
+  auto &&bench = builder.Build();
+  bench->Run();
 
   return 0;
 }

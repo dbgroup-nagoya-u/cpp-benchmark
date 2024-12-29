@@ -57,43 +57,159 @@ class Benchmarker
 
  public:
   /*############################################################################
-   * Public constructors and assignment operators
+   * Builder
    *##########################################################################*/
 
-  /**
-   * @brief Construct a new Benchmarker object.
-   *
-   * @param bench_target A reference to an actual target implementation.
-   * @param target_name The name of a benchmarking target.
-   * @param ops_engine A reference to a operation generator.
-   * @param thread_num The number of worker threads.
-   * @param rand_seed A base random seed.
-   * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
-   * @param measure_throughput A flag for measuring throughput (true) or latency (false).
-   * @param timeout_in_sec Seconds to timeout.
-   * @param target_latency A set of percentiles for measuring latency.
-   */
-  Benchmarker(  //
-      Target &bench_target,
-      const std::string &target_name,
-      OperationEngine &ops_engine,
-      const size_t thread_num = 1,
-      const size_t rand_seed = std::random_device{}(),
-      const bool output_as_csv = false,
-      const bool measure_throughput = true,
-      const size_t timeout_in_sec = 10,
-      std::vector<double> target_latency = kDefaultLatency)
-      : thread_num_{thread_num},
-        random_seed_{rand_seed},
-        output_as_csv_{output_as_csv},
-        measure_throughput_{measure_throughput},
-        target_latency_{std::move(target_latency)},
-        bench_target_{bench_target},
-        ops_engine_{ops_engine},
-        timeout_in_sec_{timeout_in_sec}
+  class Builder
   {
-    Log("*** START " + target_name + " ***");
-  }
+   public:
+    /*##########################################################################
+     * Public constructors and assignment operators
+     *########################################################################*/
+
+    /**
+     * @param target A reference to an actual target implementation.
+     * @param target_name The name of a benchmarking target.
+     * @param op_engine A reference to a operation generator.
+     */
+    Builder(  //
+        Target &target,
+        std::string target_name,
+        OperationEngine &op_engine)
+        : target_{target}, target_name_{std::move(target_name)}, op_engine_{op_engine}
+    {
+    }
+
+    Builder(const Builder &) = delete;
+    Builder(Builder &&) = delete;
+
+    auto operator=(const Builder &obj) -> Builder & = delete;
+    auto operator=(Builder &&) -> Builder & = delete;
+
+    /*##########################################################################
+     * Public destructors
+     *########################################################################*/
+
+    ~Builder() = default;
+
+    /*##########################################################################
+     * Public APIs
+     *########################################################################*/
+
+    /**
+     * @return A benchmarker.
+     */
+    [[nodiscard]] auto
+    Build() const  //
+        -> std::unique_ptr<Benchmarker>
+    {
+      return std::unique_ptr<Benchmarker>{
+          new Benchmarker{target_, target_name_, op_engine_, thread_num_, target_latency_,
+                          timeout_in_sec_, rand_seed_, output_as_csv_, measure_throughput_}};
+    }
+
+    /**
+     * @param thread_num The number of worker threads.
+     * @return Oneself.
+     */
+    constexpr auto
+    SetThreadNum(                 //
+        const size_t thread_num)  //
+        -> Builder &
+    {
+      thread_num_ = thread_num;
+      return *this;
+    }
+
+    /**
+     * @param target_latency A set of percentiles for measuring latency.
+     * @return Oneself.
+     */
+    constexpr auto
+    SetTargetLatency(                        //
+        std::vector<double> target_latency)  //
+        -> Builder &
+    {
+      target_latency_ = std::move(target_latency);
+      return *this;
+    }
+
+    /**
+     * @param timeout_in_sec Seconds to timeout.
+     * @return Oneself.
+     */
+    constexpr auto
+    SetTimeOut(                       //
+        const size_t timeout_in_sec)  //
+        -> Builder &
+    {
+      timeout_in_sec_ = timeout_in_sec;
+      return *this;
+    }
+
+    /**
+     * @param rand_seed A base random seed.
+     * @return Oneself.
+     */
+    constexpr auto
+    SetRandomSeed(               //
+        const size_t rand_seed)  //
+        -> Builder &
+    {
+      rand_seed_ = rand_seed;
+      return *this;
+    }
+
+    /**
+     * @param measure_throughput A flag for measuring throughput (true) or latency (false).
+     * @return Oneself.
+     */
+    constexpr auto
+    OutputAsCSV(                        //
+        const bool measure_throughput)  //
+        -> Builder &
+    {
+      output_as_csv_ = true;
+      measure_throughput_ = measure_throughput;
+      return *this;
+    }
+
+   private:
+    /*##########################################################################
+     * Internal member variables
+     *########################################################################*/
+
+    /// @brief A benchmaring target.
+    Target &target_{};
+
+    /// @brief The name of a benchmarking target.
+    std::string target_name_{};
+
+    /// @brief An target operation generator.
+    OperationEngine &op_engine_{};
+
+    /// @brief The number of worker threads.
+    size_t thread_num_{1};
+
+    /// @brief Targets for calculating parcentile latency.
+    std::vector<double> target_latency_{kDefaultLatency};
+
+    /// @brief Seconds to timeout.
+    size_t timeout_in_sec_{10};  // NOLINT
+
+    /// @brief A base random seed.
+    size_t rand_seed_{std::random_device{}()};
+
+    /// @brief A flat to output measured results as CSV or TXT.
+    bool output_as_csv_{false};
+
+    /// @brief A flag to measure throughput (if true) or latency (if false).
+    bool measure_throughput_{true};
+  };
+
+  /*############################################################################
+   * Public constructors and assignment operators
+   *##########################################################################*/
 
   Benchmarker(const Benchmarker &) = delete;
   Benchmarker(Benchmarker &&) = delete;
@@ -105,10 +221,6 @@ class Benchmarker
    * Public destructors
    *##########################################################################*/
 
-  /**
-   * @brief Destroy the Benchmarker object.
-   *
-   */
   ~Benchmarker() = default;
 
   /*############################################################################
@@ -122,6 +234,7 @@ class Benchmarker
   void
   Run()
   {
+    Log("*** START " + target_name_ + " ***");
     /*--------------------------------------------------------------------------
      * Preparation of benchmark workers
      *------------------------------------------------------------------------*/
@@ -133,7 +246,7 @@ class Benchmarker
     std::vector<std::future<Sketch>> result_futures{};
 
     // create workers in each thread
-    std::mt19937_64 rand{random_seed_};
+    std::mt19937_64 rand{rand_seed_};
     for (size_t i = 0; i < thread_num_; ++i) {
       std::promise<Sketch> res_p{};
       result_futures.emplace_back(res_p.get_future());
@@ -190,6 +303,45 @@ class Benchmarker
       = {0.0, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 0.9999, 1.0};
 
   /*############################################################################
+   * Internal constructors
+   *##########################################################################*/
+
+  /**
+   * @brief Construct a new Benchmarker object.
+   *
+   * @param target A reference to an actual target implementation.
+   * @param target_name The name of a benchmarking target.
+   * @param op_engine A reference to a operation generator.
+   * @param thread_num The number of worker threads.
+   * @param target_latency A set of percentiles for measuring latency.
+   * @param timeout_in_sec Seconds to timeout.
+   * @param rand_seed A base random seed.
+   * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
+   * @param measure_throughput A flag for measuring throughput (true) or latency (false).
+   */
+  Benchmarker(  //
+      Target &target,
+      std::string target_name,
+      OperationEngine &op_engine,
+      const size_t thread_num,
+      std::vector<double> target_latency,
+      const size_t timeout_in_sec,
+      const size_t rand_seed,
+      const bool output_as_csv,
+      const bool measure_throughput)
+      : target_{target},
+        target_name_{std::move(target_name)},
+        op_engine_{op_engine},
+        thread_num_{thread_num},
+        target_latency_{std::move(target_latency)},
+        rand_seed_{rand_seed},
+        timeout_in_sec_{timeout_in_sec},
+        output_as_csv_{output_as_csv},
+        measure_throughput_{measure_throughput}
+  {
+  }
+
+  /*############################################################################
    * Internal utility functions
    *##########################################################################*/
 
@@ -206,7 +358,7 @@ class Benchmarker
       const size_t thread_id,
       const size_t rand_seed)
   {
-    Worker worker{bench_target_, ops_engine_, is_running_, thread_id, rand_seed};
+    Worker worker{target_, op_engine_, is_running_, thread_id, rand_seed};
     worker_cnt_.fetch_add(1, kRelaxed);
     while (!ready_for_benchmarking_.load(kRelaxed)) {
       // the preparation has finished, so wait other workers
@@ -281,37 +433,41 @@ class Benchmarker
    * Internal member variables
    *##########################################################################*/
 
+  /// @brief A benchmaring target.
+  Target &target_{};
+
+  /// @brief The name of a benchmarking target.
+  std::string target_name_{};
+
+  /// @brief An target operation generator.
+  OperationEngine &op_engine_{};
+
   /// @brief The number of worker threads.
   const size_t thread_num_{};
 
+  /// @brief Targets for calculating parcentile latency.
+  const std::vector<double> target_latency_{};
+
   /// @brief A base random seed.
-  const size_t random_seed_{};
+  const size_t rand_seed_{};
+
+  /// @brief The number of benchmark-ready workers.
+  std::atomic_size_t worker_cnt_{};
+
+  /// @brief A flag for waking up worker threads.
+  std::atomic_bool ready_for_benchmarking_{};
+
+  /// @brief A flag for interrupting workers.
+  std::atomic_bool is_running_{};
+
+  /// @brief Seconds to timeout.
+  const std::chrono::seconds timeout_in_sec_{};
 
   /// @brief A flat to output measured results as CSV or TXT.
   const bool output_as_csv_{};
 
   /// @brief A flag to measure throughput (if true) or latency (if false).
   const bool measure_throughput_{};
-
-  /// @brief Targets for calculating parcentile latency.
-  std::vector<double> target_latency_{};
-
-  /// @brief A benchmaring target.
-  Target &bench_target_{};
-
-  /// @brief An target operation generator.
-  OperationEngine &ops_engine_{};
-
-  /// @brief A flag for interrupting workers.
-  std::atomic_bool is_running_{true};
-
-  /// @brief Seconds to timeout.
-  std::chrono::seconds timeout_in_sec_{};
-
-  std::atomic_size_t worker_cnt_{};
-
-  /// @brief A flag for waking up worker threads.
-  std::atomic_bool ready_for_benchmarking_{false};
 };
 
 }  // namespace dbgroup::benchmark

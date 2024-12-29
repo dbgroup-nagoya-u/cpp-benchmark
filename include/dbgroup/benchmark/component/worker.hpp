@@ -59,8 +59,8 @@ class Worker
       const size_t thread_id,
       const size_t rand_seed)
       : target_{target},
-        ops_engine_{ops_engine},
-        iter_{ops_engine_.GetOPIter(thread_id, rand_seed)},
+        op_engine_{ops_engine},
+        iter_{op_engine_.GetOPIter(thread_id, rand_seed)},
         is_running_{is_running},
         sketch_{OperationEngine::OPType::kTotalNum}
   {
@@ -131,7 +131,7 @@ class Worker
   Target &target_{};
 
   /// @brief Operation data to be executed by this worker.
-  OperationEngine &ops_engine_{};
+  OperationEngine &op_engine_{};
 
   /// @brief The iterator of an operation queue.
   OperationEngine::OPIter iter_{};

@@ -54,7 +54,7 @@ class WorkerFixture : public ::testing::Test
   SetUp() override
   {
     is_running_ = true;
-    worker_ = std::make_unique<TestWorker>(target_, ops_engine_, is_running_, 0, kRandomSeed);
+    worker_ = std::make_unique<TestWorker>(target_, op_engine_, is_running_, 0, kRandomSeed);
   }
 
   void
@@ -101,7 +101,7 @@ class WorkerFixture : public ::testing::Test
 
   Target target_{};
 
-  OperationEngine ops_engine_{};
+  OperationEngine op_engine_{};
 
   std::atomic_bool is_running_{};
 

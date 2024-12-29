@@ -40,6 +40,7 @@ class BenchmarkerFixture : public ::testing::Test
   using Target = ::dbgroup::example::Target<Competitor>;
   using OperationEngine = ::dbgroup::example::OperationEngine;
   using Benchmarker_t = Benchmarker<Target, OperationEngine>;
+  using Builder = typename Benchmarker_t::Builder;
 
  protected:
   /*############################################################################
@@ -73,8 +74,11 @@ class BenchmarkerFixture : public ::testing::Test
   VerifyRunBench(  //
       const size_t thread_num)
   {
-    benchmarker_ = std::make_unique<Benchmarker_t>(target_, "Bench for testing", ops_engine_,
-                                                   thread_num, kRandomSeed);
+    Builder builder{target_, "Bench for testing", op_engine_};
+    builder.SetThreadNum(thread_num);
+    builder.SetRandomSeed(kRandomSeed);
+
+    benchmarker_ = builder.Build();
     benchmarker_->Run();
   }
 
@@ -85,7 +89,7 @@ class BenchmarkerFixture : public ::testing::Test
 
   Target target_{};
 
-  OperationEngine ops_engine_{};
+  OperationEngine op_engine_{};
 
   std::unique_ptr<Benchmarker_t> benchmarker_{};
 };
