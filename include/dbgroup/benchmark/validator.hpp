@@ -32,7 +32,7 @@ namespace dbgroup::benchmark
  *############################################################################*/
 
 template <class Number>
-static auto
+inline auto
 ValidatePositiveValue(  //
     const char *flagname,
     const Number value)  //
@@ -44,7 +44,7 @@ ValidatePositiveValue(  //
   return false;
 }
 
-static auto
+inline auto
 ValidateThreadNum(  //
     [[maybe_unused]] const char *flagname,
     const size_t thread_num)  //
@@ -56,7 +56,7 @@ ValidateThreadNum(  //
   return false;
 }
 
-static auto
+inline auto
 ValidateSkewParameter(  //
     [[maybe_unused]] const char *flagname,
     const double skew)  //
@@ -68,7 +68,7 @@ ValidateSkewParameter(  //
   return false;
 }
 
-static auto
+inline auto
 ValidateProbability(  //
     [[maybe_unused]] const char *flagname,
     const double prob)  //
@@ -80,7 +80,7 @@ ValidateProbability(  //
   return false;
 }
 
-static auto
+inline auto
 ValidateStr2UInt(  //
     [[maybe_unused]] const char *flagname,
     const std::string &str)  //
