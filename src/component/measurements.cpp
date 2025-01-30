@@ -44,6 +44,12 @@ SimpleDDSketch::operator+=(  //
 
   const auto ops_num = bins_.size();
   for (size_t ops_id = 0; ops_id < ops_num; ++ops_id) {
+    if (rhs.min_[ops_id] < min_[ops_id]) {
+      min_[ops_id] = rhs.min_[ops_id];
+    }
+    if (rhs.max_[ops_id] > max_[ops_id]) {
+      max_[ops_id] = rhs.max_[ops_id];
+    }
     exec_nums_[ops_id] += rhs.exec_nums_[ops_id];
     for (size_t i = 0; i < kBinNum; ++i) {
       bins_[ops_id][i] += rhs.bins_[ops_id][i];
