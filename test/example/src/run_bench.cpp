@@ -19,6 +19,7 @@
 
 // external libraries
 #include "dbgroup/benchmark/benchmarker.hpp"
+#include "dbgroup/benchmark/validator.hpp"
 
 // local sources
 #include "operation_engine.hpp"

@@ -22,6 +22,9 @@
 #include <stdexcept>
 #include <string>
 
+// external libraries
+#include "dbgroup/thread/common.hpp"
+
 namespace dbgroup::benchmark
 {
 /*############################################################################*
@@ -42,6 +45,18 @@ ValidatePositiveValue(  //
 }
 
 static auto
+ValidateThreadNum(  //
+    [[maybe_unused]] const char *flagname,
+    const size_t thread_num)  //
+    -> bool
+{
+  if (0 < thread_num && thread_num <= ::dbgroup::thread::kMaxThreadNum) return true;
+
+  std::cerr << "ERROR: The number of worker threads must be in [1, DBGROUP_MAX_THREAD_NUM].\n";
+  return false;
+}
+
+static auto
 ValidateSkewParameter(  //
     [[maybe_unused]] const char *flagname,
     const double skew)  //
@@ -50,6 +65,18 @@ ValidateSkewParameter(  //
   if (skew >= 0) return true;
 
   std::cerr << "ERROR: A skew parameter must be larther than or equal to zero.\n";
+  return false;
+}
+
+static auto
+ValidateProbability(  //
+    [[maybe_unused]] const char *flagname,
+    const double prob)  //
+    -> bool
+{
+  if (0 <= prob && prob <= 1.0) return true;
+
+  std::cerr << "ERROR: A probability must be in [0, 1.0].\n";
   return false;
 }
 
