@@ -254,6 +254,7 @@ class Benchmarker
     }
     while (worker_cnt_.load(kRelaxed) < thread_num_) {
       // wait for all workers to be created
+      std::this_thread::yield();
     }
 
     /*------------------------------------------------------------------------*
@@ -362,6 +363,7 @@ class Benchmarker
     worker_cnt_.fetch_add(1, kRelaxed);
     while (!ready_for_benchmarking_.load(kRelaxed)) {
       // the preparation has finished, so wait other workers
+      std::this_thread::yield();
     }
 
     worker.Measure();
