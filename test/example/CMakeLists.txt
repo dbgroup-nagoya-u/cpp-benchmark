@@ -46,12 +46,14 @@ if(NOT TARGET dbgroup::${PROJECT_NAME})
     "${CMAKE_CURRENT_SOURCE_DIR}/src/target.cpp"
   )
   add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+  target_compile_features(${PROJECT_NAME} PRIVATE
+    "cxx_std_20"
+  )
   target_compile_options(${PROJECT_NAME} PRIVATE
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
     -Wall
     -Wextra
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
   )
   target_include_directories(${PROJECT_NAME} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -75,11 +77,10 @@ function(ADD_BENCHMARK BENCHMARK_TARGET)
     "cxx_std_20"
   )
   target_compile_options(${BENCHMARK_TARGET} PRIVATE
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
     -Wall
     -Wextra
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
   )
   target_include_directories(${BENCHMARK_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
