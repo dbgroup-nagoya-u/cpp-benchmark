@@ -43,6 +43,12 @@ if(NOT TARGET dbgroup::${PROJECT_NAME})
   target_compile_features(${PROJECT_NAME} PUBLIC
     "cxx_std_20"
   )
+  target_compile_options(${PROJECT_NAME} PRIVATE
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
+    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
+    -Wall
+    -Wextra
+  )
   target_include_directories(${PROJECT_NAME} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
   )
