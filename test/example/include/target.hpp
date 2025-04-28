@@ -53,13 +53,13 @@ using OptimisticLock = ::dbgroup::lock::OptimisticLock;
 template <class Competitor>
 class Target
 {
+ public:
   /*##########################################################################*
-   * Type aliases
+   * Public types
    *##########################################################################*/
 
-  using OPTyep = OperationEngine::OPType;
+  using OPType = OperationEngine::OPType;
 
- public:
   /*##########################################################################*
    * Public APIs
    *##########################################################################*/
@@ -75,12 +75,12 @@ class Target
   }
 
   /**
-   * @brief Tear the current thread down as the worker.
+   * @brief Preprocess before running benchmark.
    *
    * @note Our benchmark template requires this function.
    */
   constexpr void
-  TearDownForWorker() const
+  PreProcess() const
   {
   }
 
@@ -93,9 +93,29 @@ class Target
    * @note Our benchmark template requires this function.
    */
   auto Execute(  //
-      OPTyep type,
+      OPType type,
       uint32_t pos)  //
       -> size_t;
+
+  /**
+   * @brief Postprocess after running benchmark.
+   *
+   * @note Our benchmark template requires this function.
+   */
+  constexpr void
+  PostProcess() const
+  {
+  }
+
+  /**
+   * @brief Tear the current thread down as the worker.
+   *
+   * @note Our benchmark template requires this function.
+   */
+  constexpr void
+  TearDownForWorker() const
+  {
+  }
 
  private:
   /*##########################################################################*

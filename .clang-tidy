@@ -1,3 +1,4 @@
+# cSpell:disable
 ---
 Checks: '
 -*,
@@ -10,6 +11,7 @@ cert-*,
 -cert-msc51-cpp,
 cppcoreguidelines-*,
 -cppcoreguidelines-avoid-c-arrays,
+-cppcoreguidelines-avoid-non-const-global-variables,
 -cppcoreguidelines-non-private-member-variables-in-classes,
 -cppcoreguidelines-owning-memory,
 -cppcoreguidelines-pro-bounds-constant-array-index,

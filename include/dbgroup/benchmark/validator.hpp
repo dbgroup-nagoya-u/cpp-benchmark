@@ -23,7 +23,7 @@
 #include <string>
 
 // external libraries
-#include "dbgroup/thread/common.hpp"
+#include "dbgroup/constants.hpp"
 
 namespace dbgroup::benchmark
 {
@@ -50,7 +50,7 @@ ValidateThreadNum(  //
     const size_t thread_num)  //
     -> bool
 {
-  if (0 < thread_num && thread_num <= ::dbgroup::thread::kMaxThreadNum) return true;
+  if (0 < thread_num && thread_num <= kMaxThreadNum) return true;
 
   std::cerr << "ERROR: The number of worker threads must be in [1, DBGROUP_MAX_THREAD_NUM].\n";
   return false;
@@ -64,7 +64,7 @@ ValidateSkewParameter(  //
 {
   if (skew >= 0) return true;
 
-  std::cerr << "ERROR: A skew parameter must be larther than or equal to zero.\n";
+  std::cerr << "ERROR: A skew parameter must be larger than or equal to zero.\n";
   return false;
 }
 

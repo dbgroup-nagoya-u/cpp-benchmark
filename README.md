@@ -8,6 +8,7 @@
     - [Build and Run Unit Tests](#build-and-run-unit-tests)
 - [Usage](#usage)
     - [Linking by CMake](#linking-by-cmake)
+    - [Flowchart of User-defined Functions in RunBench](#flowchart-of-user-defined-functions-in-runbench)
 - [Acknowledgments](#acknowledgments)
 
 ## Build
@@ -57,6 +58,24 @@ add_executable(
 target_link_libraries(<target_bin_name> PRIVATE
   dbgroup::cpp_benchmark
 )
+```
+
+### Flowchart of User-defined Functions in RunBench
+
+```mermaid
+flowchart TD
+    setup_worker["`Target::SetUpForWorker
+    (called from each worker)`"]
+    execute["`Target::Execute
+    (called from each worker)`"]
+    teardown_worker["`Target::TearDownForWorker
+    (called from each worker)`"]
+
+    setup_worker --> Target::PreProcess
+    Target::PreProcess --> execute
+    execute --> Target::PostProcess
+    Target::PostProcess --> teardown_worker
+    
 ```
 
 ## Acknowledgments

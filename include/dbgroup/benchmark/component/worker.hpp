@@ -48,7 +48,7 @@ class Worker
   /**
    * @brief Construct a new Worker object.
    *
-   * @param target A referene to a target implementation.
+   * @param target A reference to a target implementation.
    * @param operations Operation data to be performed by this worker.
    * @param is_running A flag for monitoring benchmarker's status.
    */

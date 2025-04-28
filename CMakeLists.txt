@@ -8,17 +8,29 @@ endif()
 # project information
 project(
   cpp_bench
-  VERSION "2.0.0"
+  VERSION "2.1.0"
   DESCRIPTION "A benchmarker library for C++ language."
   LANGUAGES "CXX"
 )
 
 if(NOT TARGET dbgroup::${PROJECT_NAME})
+  # enable features
+  include(FetchContent)
+
   #----------------------------------------------------------------------------#
-  # Configure system libraries
+  # Configurations
   #----------------------------------------------------------------------------#
 
+  # use multi threads
   find_package(Threads)
+
+  # use our utility
+  FetchContent_Declare(
+    cpp-utility
+    GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility.git"
+    GIT_TAG "db062d55b6ca017eb686952da25ac012b5fdce1f"
+  )
+  FetchContent_MakeAvailable(cpp-utility)
 
   #----------------------------------------------------------------------------#
   # Build target

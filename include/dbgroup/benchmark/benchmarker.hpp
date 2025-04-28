@@ -35,6 +35,7 @@
 // local sources
 #include "dbgroup/benchmark/component/measurements.hpp"
 #include "dbgroup/benchmark/component/worker.hpp"
+#include "dbgroup/benchmark/utility.hpp"
 
 namespace dbgroup::benchmark
 {
@@ -45,7 +46,7 @@ namespace dbgroup::benchmark
  * @tparam Operation A struct to perform each operation.
  * @tparam OperationEngine A class to generate operations.
  */
-template <class Target, class OperationEngine>
+template <TargetClass Target, OPEngineClass OperationEngine>
 class Benchmarker
 {
   /*##########################################################################*
@@ -179,7 +180,7 @@ class Benchmarker
      * Internal member variables
      *########################################################################*/
 
-    /// @brief A benchmaring target.
+    /// @brief A benchmark target.
     Target &target_{};
 
     /// @brief The name of a benchmarking target.
@@ -191,11 +192,11 @@ class Benchmarker
     /// @brief The number of worker threads.
     size_t thread_num_{1};
 
-    /// @brief Targets for calculating parcentile latency.
+    /// @brief Targets for calculating percentile latency.
     std::vector<double> target_latency_{kDefaultLatency};
 
     /// @brief Seconds to timeout.
-    size_t timeout_in_sec_{10};  // NOLINT
+    size_t timeout_in_sec_{3600};  // NOLINT
 
     /// @brief A base random seed.
     size_t rand_seed_{std::random_device{}()};
@@ -254,11 +255,14 @@ class Benchmarker
     }
     while (worker_cnt_.load(kRelaxed) < thread_num_) {
       // wait for all workers to be created
+      std::this_thread::yield();
     }
 
     /*------------------------------------------------------------------------*
      * Measuring throughput/latency
      *------------------------------------------------------------------------*/
+    target_.PreProcess();
+
     std::vector<Sketch> results{};
     results.reserve(thread_num_);
 
@@ -275,8 +279,10 @@ class Benchmarker
       results.emplace_back(future.get());
     }
 
+    target_.PostProcess();
+    ready_for_benchmarking_.store(false, kRelaxed);
     /*------------------------------------------------------------------------*
-     * Output benchmarkings results
+     * Output benchmark results
      *------------------------------------------------------------------------*/
     Log("...Finish running.");
 
@@ -298,7 +304,7 @@ class Benchmarker
   /// @brief The alias of `std::memory_order_relaxed`.
   static constexpr auto kRelaxed = std::memory_order_relaxed;
 
-  /// @brief Targets for calculating parcentile latency.
+  /// @brief Targets for calculating percentile latency.
   static constexpr auto kDefaultLatency  //
       = {0.0, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 0.9999, 1.0};
 
@@ -362,10 +368,16 @@ class Benchmarker
     worker_cnt_.fetch_add(1, kRelaxed);
     while (!ready_for_benchmarking_.load(kRelaxed)) {
       // the preparation has finished, so wait other workers
+      std::this_thread::yield();
     }
 
     worker.Measure();
     result_p.set_value(worker.MoveSketch());
+
+    while (ready_for_benchmarking_.load(kRelaxed)) {
+      // the measurement has finished, so wait the main thread
+      std::this_thread::sleep_for(std::chrono::microseconds{1});
+    }
   }
 
   /**
@@ -391,7 +403,7 @@ class Benchmarker
   }
 
   /**
-   * @brief Compute percentiled latency and output it to stdout.
+   * @brief Compute percentile latency and output it to stdout.
    *
    * @param results benchmarking results.
    */
@@ -433,7 +445,7 @@ class Benchmarker
    * Internal member variables
    *##########################################################################*/
 
-  /// @brief A benchmaring target.
+  /// @brief A benchmark target.
   Target &target_{};
 
   /// @brief The name of a benchmarking target.
@@ -445,7 +457,7 @@ class Benchmarker
   /// @brief The number of worker threads.
   const size_t thread_num_{};
 
-  /// @brief Targets for calculating parcentile latency.
+  /// @brief Targets for calculating percentile latency.
   const std::vector<double> target_latency_{};
 
   /// @brief A base random seed.
