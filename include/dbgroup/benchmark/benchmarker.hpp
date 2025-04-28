@@ -260,6 +260,8 @@ class Benchmarker
     /*------------------------------------------------------------------------*
      * Measuring throughput/latency
      *------------------------------------------------------------------------*/
+    target_.PreProcess();
+
     std::vector<Sketch> results{};
     results.reserve(thread_num_);
 
@@ -276,6 +278,8 @@ class Benchmarker
       results.emplace_back(future.get());
     }
 
+    target_.PostProcess();
+    ready_for_benchmarking_.store(false, kRelaxed);
     /*------------------------------------------------------------------------*
      * Output benchmark results
      *------------------------------------------------------------------------*/
@@ -368,6 +372,11 @@ class Benchmarker
 
     worker.Measure();
     result_p.set_value(worker.MoveSketch());
+
+    while (ready_for_benchmarking_.load(kRelaxed)) {
+      // the measurement has finished, so wait the main thread
+      std::this_thread::sleep_for(std::chrono::microseconds{1});
+    }
   }
 
   /**
