@@ -64,7 +64,7 @@ ValidateSkewParameter(  //
 {
   if (skew >= 0) return true;
 
-  std::cerr << "ERROR: A skew parameter must be larther than or equal to zero.\n";
+  std::cerr << "ERROR: A skew parameter must be larger than or equal to zero.\n";
   return false;
 }
 

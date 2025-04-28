@@ -179,7 +179,7 @@ class Benchmarker
      * Internal member variables
      *########################################################################*/
 
-    /// @brief A benchmaring target.
+    /// @brief A benchmark target.
     Target &target_{};
 
     /// @brief The name of a benchmarking target.
@@ -191,7 +191,7 @@ class Benchmarker
     /// @brief The number of worker threads.
     size_t thread_num_{1};
 
-    /// @brief Targets for calculating parcentile latency.
+    /// @brief Targets for calculating percentile latency.
     std::vector<double> target_latency_{kDefaultLatency};
 
     /// @brief Seconds to timeout.
@@ -276,7 +276,7 @@ class Benchmarker
     }
 
     /*------------------------------------------------------------------------*
-     * Output benchmarkings results
+     * Output benchmark results
      *------------------------------------------------------------------------*/
     Log("...Finish running.");
 
@@ -298,7 +298,7 @@ class Benchmarker
   /// @brief The alias of `std::memory_order_relaxed`.
   static constexpr auto kRelaxed = std::memory_order_relaxed;
 
-  /// @brief Targets for calculating parcentile latency.
+  /// @brief Targets for calculating percentile latency.
   static constexpr auto kDefaultLatency  //
       = {0.0, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 0.9999, 1.0};
 
@@ -391,7 +391,7 @@ class Benchmarker
   }
 
   /**
-   * @brief Compute percentiled latency and output it to stdout.
+   * @brief Compute percentile latency and output it to stdout.
    *
    * @param results benchmarking results.
    */
@@ -433,7 +433,7 @@ class Benchmarker
    * Internal member variables
    *##########################################################################*/
 
-  /// @brief A benchmaring target.
+  /// @brief A benchmark target.
   Target &target_{};
 
   /// @brief The name of a benchmarking target.
@@ -445,7 +445,7 @@ class Benchmarker
   /// @brief The number of worker threads.
   const size_t thread_num_{};
 
-  /// @brief Targets for calculating parcentile latency.
+  /// @brief Targets for calculating percentile latency.
   const std::vector<double> target_latency_{};
 
   /// @brief A base random seed.
