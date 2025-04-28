@@ -42,7 +42,7 @@ Target<std::shared_mutex>::Execute(  //
 
   if (type == OPType::kRead) {
     [[maybe_unused]] const std::shared_lock guard{page.lock};
-    size_t sum = 0;
+    [[maybe_unused]] size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
@@ -67,7 +67,7 @@ Target<BackOffLock>::Execute(  //
 
   if (type == OPType::kRead) {
     [[maybe_unused]] const auto &guard = page.lock.LockS();
-    size_t sum = 0;
+    [[maybe_unused]] size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
@@ -92,7 +92,7 @@ Target<MCSLock>::Execute(  //
 
   if (type == OPType::kRead) {
     [[maybe_unused]] const auto &guard = page.lock.LockS();
-    size_t sum = 0;
+    [[maybe_unused]] size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
@@ -118,7 +118,7 @@ Target<OptimisticLock>::Execute(  //
   if (type == OPType::kRead) {
     auto &&guard = page.lock.GetVersion();
     do {
-      size_t sum = 0;
+      [[maybe_unused]] size_t sum = 0;
       for (size_t i = 0; i < kElementNum; ++i) {
         sum += page.values[i];
       }
