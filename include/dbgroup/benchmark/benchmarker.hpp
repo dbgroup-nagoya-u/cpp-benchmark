@@ -195,7 +195,7 @@ class Benchmarker
     std::vector<double> target_latency_{kDefaultLatency};
 
     /// @brief Seconds to timeout.
-    size_t timeout_in_sec_{10};  // NOLINT
+    size_t timeout_in_sec_{3600};  // NOLINT
 
     /// @brief A base random seed.
     size_t rand_seed_{std::random_device{}()};
