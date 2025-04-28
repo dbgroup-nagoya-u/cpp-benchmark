@@ -13,25 +13,25 @@ project(
   LANGUAGES "CXX"
 )
 
-# enable features
-include(FetchContent)
-
 if(NOT TARGET dbgroup::${PROJECT_NAME})
+  # enable features
+  include(FetchContent)
+
   #----------------------------------------------------------------------------#
   # Configurations
   #----------------------------------------------------------------------------#
 
-  # use our utility
-  FetchContent_Declare(
-    cpp-utility
-    GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility.git"
-    GIT_TAG "6487d3fe2ab4e70b5ab5cee7742cccf92bb5f072"
-  )
-  FetchContent_MakeAvailable(cpp-utility)
+  # # use our utility
+  # FetchContent_Declare(
+  #   cpp-utility
+  #   GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility.git"
+  #   GIT_TAG "..."
+  # )
+  # FetchContent_MakeAvailable(cpp-utility)
 
   # use our benchmark utility
   # FetchContent_Declare(
-  #   cpp-utility
+  #   cpp-benchmark
   #   GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-benchmark.git"
   #   GIT_TAG "..."
   # )
