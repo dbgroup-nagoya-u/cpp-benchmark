@@ -34,13 +34,13 @@ namespace dbgroup::example
 template <>
 auto
 Target<std::shared_mutex>::Execute(  //
-    OPTyep type,
+    OPType type,
     uint32_t pos)  //
     -> size_t
 {
   auto &page = pages_[pos];
 
-  if (type == OPTyep::kRead) {
+  if (type == OPType::kRead) {
     [[maybe_unused]] const std::shared_lock guard{page.lock};
     size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
@@ -59,13 +59,13 @@ Target<std::shared_mutex>::Execute(  //
 template <>
 auto
 Target<BackOffLock>::Execute(  //
-    OPTyep type,
+    OPType type,
     uint32_t pos)  //
     -> size_t
 {
   auto &page = pages_[pos];
 
-  if (type == OPTyep::kRead) {
+  if (type == OPType::kRead) {
     [[maybe_unused]] const auto &guard = page.lock.LockS();
     size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
@@ -84,13 +84,13 @@ Target<BackOffLock>::Execute(  //
 template <>
 auto
 Target<MCSLock>::Execute(  //
-    OPTyep type,
+    OPType type,
     uint32_t pos)  //
     -> size_t
 {
   auto &page = pages_[pos];
 
-  if (type == OPTyep::kRead) {
+  if (type == OPType::kRead) {
     [[maybe_unused]] const auto &guard = page.lock.LockS();
     size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
@@ -109,13 +109,13 @@ Target<MCSLock>::Execute(  //
 template <>
 auto
 Target<OptimisticLock>::Execute(  //
-    OPTyep type,
+    OPType type,
     uint32_t pos)  //
     -> size_t
 {
   auto &page = pages_[pos];
 
-  if (type == OPTyep::kRead) {
+  if (type == OPType::kRead) {
     auto &&guard = page.lock.GetVersion();
     do {
       size_t sum = 0;

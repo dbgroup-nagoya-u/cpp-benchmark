@@ -53,13 +53,13 @@ using OptimisticLock = ::dbgroup::lock::OptimisticLock;
 template <class Competitor>
 class Target
 {
+ public:
   /*##########################################################################*
-   * Type aliases
+   * Public types
    *##########################################################################*/
 
-  using OPTyep = OperationEngine::OPType;
+  using OPType = OperationEngine::OPType;
 
- public:
   /*##########################################################################*
    * Public APIs
    *##########################################################################*/
@@ -93,7 +93,7 @@ class Target
    * @note Our benchmark template requires this function.
    */
   auto Execute(  //
-      OPTyep type,
+      OPType type,
       uint32_t pos)  //
       -> size_t;
 

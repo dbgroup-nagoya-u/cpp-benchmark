@@ -35,6 +35,7 @@
 // local sources
 #include "dbgroup/benchmark/component/measurements.hpp"
 #include "dbgroup/benchmark/component/worker.hpp"
+#include "dbgroup/benchmark/utility.hpp"
 
 namespace dbgroup::benchmark
 {
@@ -45,7 +46,7 @@ namespace dbgroup::benchmark
  * @tparam Operation A struct to perform each operation.
  * @tparam OperationEngine A class to generate operations.
  */
-template <class Target, class OperationEngine>
+template <TargetClass Target, OPEngineClass OperationEngine>
 class Benchmarker
 {
   /*##########################################################################*
