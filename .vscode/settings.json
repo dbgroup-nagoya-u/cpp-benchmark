@@ -18,7 +18,15 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/build": true,
+    "**/build/vscode/*.*": true,
+    "**/build/vscode/bin": true,
+    "**/build/vscode/CMakeFiles": true,
+    "**/build/vscode/external": true,
+    "**/build/vscode/lib": true,
+    "**/build/vscode/test": true,
+    "**/build/vscode/Testing": true,
+    "**/build/vscode/_deps/*-build": true,
+    "**/build/vscode/_deps/*-subbuild": true,
   },
   "files.watcherExclude": {
     "**/.git/objects/**": true,
@@ -31,6 +39,7 @@
   "C_Cpp.codeAnalysis.clangTidy.enabled": true,
   "C_Cpp.codeAnalysis.clangTidy.path": "/usr/bin/clang-tidy",
   "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
+  "C_Cpp.codeAnalysis.clangTidy.headerFilter": "${workspaceFolder}/include/*",
   // unit test settings
   "testMate.cpp.test.runtimeLimit": 60,
   "testMate.cpp.test.executables": "build/vscode/test/*_test",
@@ -51,6 +60,10 @@
   "markdown.extension.tableFormatter.enabled": false,
   "markdown.extension.toc.levels": "2..3",
   // local dictionary
+  "cSpell.enabledFileTypes": {
+    "*": true,
+    "ignore": false
+  },
   "cSpell.words": [
     "alignas",
     "CPUs",
