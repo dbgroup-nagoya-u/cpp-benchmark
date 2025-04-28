@@ -59,6 +59,7 @@ class Target
    *##########################################################################*/
 
   using OPType = OperationEngine::OPType;
+  using Operation = OperationEngine::Operation;
 
   /*##########################################################################*
    * Public APIs

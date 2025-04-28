@@ -61,6 +61,13 @@ class OperationEngine
   };
 
   /**
+   * @brief A class for representing operation details.
+   *
+   * @note Our benchmark template requires this type.
+   */
+  using Operation = uint32_t;
+
+  /**
    * @brief A class for iterating an operation queue.
    *
    * @note Our benchmark template requires this type.

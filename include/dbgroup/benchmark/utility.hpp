@@ -48,11 +48,11 @@ concept OPTypeEnum = requires(T &x) {
  * @tparam T A target class.
  * @tparam OPType A class for representing operation iterators.
  */
-template <class T, class OPType>
+template <class T, class OPType, class Operation>
 concept OPIterClass = requires(T &x) {
   // public APIs
   { static_cast<bool>(x) } -> std::convertible_to<bool>;
-  { *x } -> std::convertible_to<std::pair<OPType, uint32_t>>;
+  { *x } -> std::convertible_to<std::pair<OPType, Operation>>;
   { ++x } -> std::convertible_to<T &>;
 };
 
@@ -65,7 +65,8 @@ template <class T>
 concept OPEngineClass = requires(T &x, size_t thread_id, size_t rand_seed) {
   // public types
   requires OPTypeEnum<typename T::OPType>;
-  requires OPIterClass<typename T::OPIter, typename T::OPType>;
+  typename T::Operation;
+  requires OPIterClass<typename T::OPIter, typename T::OPType, typename T::Operation>;
 
   // public APIs
   { x.GetOPIter(thread_id, rand_seed) } -> std::convertible_to<typename T::OPIter>;
@@ -77,14 +78,15 @@ concept OPEngineClass = requires(T &x, size_t thread_id, size_t rand_seed) {
  * @tparam T A target class.
  */
 template <class T>
-concept TargetClass = requires(T &x, typename T::OPType type, uint32_t pos) {
+concept TargetClass = requires(T &x, typename T::OPType type, typename T::Operation ops) {
   // public types
   requires OPTypeEnum<typename T::OPType>;
+  typename T::Operation;
 
   // public types
   { x.SetUpForWorker() };
   { x.PreProcess() };
-  { x.Execute(type, pos) } -> std::convertible_to<size_t>;
+  { x.Execute(type, ops) } -> std::convertible_to<size_t>;
   { x.PostProcess() };
   { x.TearDownForWorker() };
 };
