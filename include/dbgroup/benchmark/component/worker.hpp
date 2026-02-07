@@ -18,13 +18,14 @@
 #define DBGROUP_BENCHMARK_COMPONENT_WORKER_HPP_
 
 // C++ standard libraries
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <utility>
 
-// local sources
-#include "dbgroup/benchmark/component/measurements.hpp"
-#include "dbgroup/benchmark/component/stopwatch.hpp"
+// external libraries
+#include "dbgroup/benchmark/stop_watch.hpp"
+#include "dbgroup/constants.hpp"
 
 namespace dbgroup::benchmark::component
 {
@@ -40,9 +41,15 @@ namespace dbgroup::benchmark::component
 template <class Target, class OperationEngine>
 class Worker
 {
+  /*##########################################################################*
+   * Type aliases
+   *##########################################################################*/
+
+  using OPType = OperationEngine::OPType;
+
  public:
   /*##########################################################################*
-   * Public constructors/destructors
+   * Public constructors and assignment operators
    *##########################################################################*/
 
   /**
@@ -58,20 +65,20 @@ class Worker
       const std::atomic_bool &is_running,
       const size_t thread_id,
       const size_t rand_seed)
-      : target_{target},
+      : is_running_{is_running},
+        target_{target},
         op_engine_{ops_engine},
-        iter_{op_engine_.GetOPIter(thread_id, rand_seed)},
-        is_running_{is_running},
-        sketch_{OperationEngine::OPType::kTotalNum}
+        iter_{op_engine_.GetOPIter(thread_id, rand_seed)}
   {
     target_.SetUpForWorker();
   }
 
-  Worker(const Worker &) = delete;
   Worker(Worker &&) noexcept = default;
-
-  auto operator=(const Worker &obj) -> Worker & = delete;
   auto operator=(Worker &&) noexcept -> Worker & = default;
+
+  // forbid copying
+  Worker(const Worker &) = delete;
+  auto operator=(const Worker &obj) -> Worker & = delete;
 
   /*##########################################################################*
    * Public destructors
@@ -96,36 +103,30 @@ class Worker
   {
     for (; iter_ && is_running_.load(kRelaxed); ++iter_) [[likely]] {
       const auto &[type, op] = *iter_;
-      stopwatch_.Start();
+      auto &sw = stop_watches_[type];
+      sw.Start();
       const auto cnt = target_.Execute(type, op);
-      stopwatch_.Stop();
-      sketch_.Add(type, cnt, stopwatch_.GetNanoDuration());
+      sw.Stop(cnt);
     }
   }
 
   /**
-   * @brief Get measurement results with its ownership.
-   *
    * @return Measurement results.
    */
-  auto
-  MoveSketch()  //
-      -> SimpleDDSketch
+  const auto
+  GetMeasurements() noexcept  //
+      -> std::array<StopWatch, OPType::kTotalNum>
   {
-    return std::move(sketch_);
+    return stop_watches_;
   }
 
  private:
   /*##########################################################################*
-   * Internal constants
-   *##########################################################################*/
-
-  /// @brief The alias of `std::memory_order_relaxed`.
-  static constexpr auto kRelaxed = std::memory_order_relaxed;
-
-  /*##########################################################################*
    * Internal member variables
    *##########################################################################*/
+
+  /// @brief A reference for monitoring a running state.
+  const std::atomic_bool &is_running_{};
 
   /// @brief A benchmark target.
   Target &target_{};
@@ -136,13 +137,8 @@ class Worker
   /// @brief The iterator of an operation queue.
   OperationEngine::OPIter iter_{};
 
-  const std::atomic_bool &is_running_{};
-
-  /// @brief Measurement results.
-  SimpleDDSketch sketch_{};
-
   /// @brief A stopwatch to measure execution time.
-  StopWatch stopwatch_{};
+  std::array<StopWatch, OPType::kTotalNum> stop_watches_{};
 };
 
 }  // namespace dbgroup::benchmark::component

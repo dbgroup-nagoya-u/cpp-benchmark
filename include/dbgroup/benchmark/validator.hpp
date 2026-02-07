@@ -24,6 +24,7 @@
 
 // external libraries
 #include "dbgroup/constants.hpp"
+#include "dbgroup/thread/id_manager.hpp"
 
 namespace dbgroup::benchmark
 {
@@ -50,7 +51,8 @@ ValidateThreadNum(  //
     const size_t thread_num)  //
     -> bool
 {
-  if (0 < thread_num && thread_num <= kMaxThreadNum) return true;
+  const auto max_thd_num = dbgroup::thread::IDManager::GetMaxThreadNum();
+  if (0 < thread_num && thread_num <= max_thd_num) return true;
 
   std::cerr << "ERROR: The number of worker threads must be in [1, DBGROUP_MAX_THREAD_NUM].\n";
   return false;

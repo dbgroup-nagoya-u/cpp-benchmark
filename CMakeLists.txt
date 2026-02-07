@@ -28,7 +28,7 @@ if(NOT TARGET dbgroup::${PROJECT_NAME})
   FetchContent_Declare(
     cpp-utility
     GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility.git"
-    GIT_TAG "db062d55b6ca017eb686952da25ac012b5fdce1f"
+    GIT_TAG "4d0e2367eb21f7495e0433dc36766a316d49ce41" # 0.15.0
   )
   FetchContent_MakeAvailable(cpp-utility)
 
@@ -36,24 +36,17 @@ if(NOT TARGET dbgroup::${PROJECT_NAME})
   # Build target
   #----------------------------------------------------------------------------#
 
-  add_library(${PROJECT_NAME} STATIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/component/measurements.cpp"
-  )
+  add_library(${PROJECT_NAME} INTERFACE)
   add_library(dbgroup::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-  target_compile_features(${PROJECT_NAME} PUBLIC
+  target_compile_features(${PROJECT_NAME} INTERFACE
     "cxx_std_20"
   )
-  target_compile_options(${PROJECT_NAME} PRIVATE
-    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Release">:-march=native>
-    $<$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">:-g3>
-    -Wall
-    -Wextra
-  )
-  target_include_directories(${PROJECT_NAME} PUBLIC
+  target_include_directories(${PROJECT_NAME} INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
   )
-  target_link_libraries(${PROJECT_NAME} PUBLIC
+  target_link_libraries(${PROJECT_NAME} INTERFACE
     Threads::Threads
+    dbgroup::cpp_utility
   )
 
   #----------------------------------------------------------------------------#
