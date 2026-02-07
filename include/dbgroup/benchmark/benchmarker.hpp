@@ -32,8 +32,11 @@
 #include <utility>
 #include <vector>
 
+// external libraries
+#include "dbgroup/benchmark/stop_watch.hpp"
+#include "dbgroup/lock/utility.hpp"
+
 // local sources
-#include "dbgroup/benchmark/component/measurements.hpp"
 #include "dbgroup/benchmark/component/worker.hpp"
 #include "dbgroup/benchmark/utility.hpp"
 
@@ -43,7 +46,6 @@ namespace dbgroup::benchmark
  * @brief A class to run benchmark.
  *
  * @tparam Target An actual target implementation.
- * @tparam Operation A struct to perform each operation.
  * @tparam OperationEngine A class to generate operations.
  */
 template <TargetClass Target, OPEngineClass OperationEngine>
@@ -53,8 +55,9 @@ class Benchmarker
    * Type aliases
    *##########################################################################*/
 
+  using OPType = OperationEngine::OPType;
+  using StopWatches = std::array<StopWatch, OPType::kTotalNum>;
   using Worker = component::Worker<Target, OperationEngine>;
-  using Sketch = component::SimpleDDSketch;
 
  public:
   /*##########################################################################*
@@ -75,7 +78,7 @@ class Benchmarker
      */
     Builder(  //
         Target &target,
-        std::string target_name,
+        std::string target_name,  // NOLINT
         OperationEngine &op_engine)
         : target_{target}, target_name_{std::move(target_name)}, op_engine_{op_engine}
     {
@@ -244,14 +247,16 @@ class Benchmarker
     ready_for_benchmarking_.store(false, kRelaxed);
     worker_cnt_.store(0, kRelaxed);
 
-    std::vector<std::future<Sketch>> result_futures{};
+    std::vector<std::future<StopWatches>> result_futures{};
+    result_futures.reserve(thread_num_);
 
     // create workers in each thread
     std::mt19937_64 rand{rand_seed_};
-    for (size_t i = 0; i < thread_num_; ++i) {
-      std::promise<Sketch> res_p{};
+    for (size_t thd_id = 0; thd_id < thread_num_; ++thd_id) {
+      std::promise<StopWatches> res_p{};
       result_futures.emplace_back(res_p.get_future());
-      std::thread{&Benchmarker::RunWorker, this, std::move(res_p), i, rand()}.detach();
+      std::thread t{&Benchmarker::RunWorker, this, std::move(res_p), thd_id, rand()};
+      t.detach();
     }
     while (worker_cnt_.load(kRelaxed) < thread_num_) {
       // wait for all workers to be created
@@ -263,7 +268,7 @@ class Benchmarker
      *------------------------------------------------------------------------*/
     target_.PreProcess();
 
-    std::vector<Sketch> results{};
+    std::vector<StopWatches> results{};
     results.reserve(thread_num_);
 
     Log("...Run workers.");
@@ -286,14 +291,18 @@ class Benchmarker
      *------------------------------------------------------------------------*/
     Log("...Finish running.");
 
-    auto &&sketch = results[0];
-    for (size_t i = 1; i < thread_num_; ++i) {
-      sketch += results[i];
+    auto &&stop_watches = results[0];
+    for (size_t thd_id = 1; thd_id < thread_num_; ++thd_id) {
+      for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
+        stop_watches[op_id] += results[thd_id][op_id];
+      }
     }
 
-    LogThroughput(sketch);
-    LogLatency(sketch);
-    Log("*** FINISH ***\n");
+    Log("");
+    LogThroughput(stop_watches);
+    Log("");
+    LogLatency(stop_watches);
+    Log("\n*** FINISH ***\n");
   }
 
  private:
@@ -327,7 +336,7 @@ class Benchmarker
    */
   Benchmarker(  //
       Target &target,
-      std::string target_name,
+      std::string target_name,  // NOLINT
       OperationEngine &op_engine,
       const size_t thread_num,
       std::vector<double> target_latency,
@@ -352,6 +361,21 @@ class Benchmarker
    *##########################################################################*/
 
   /**
+   * @param sw A measurement summary.
+   * @return Throughput [Ops/s].
+   */
+  [[nodiscard]]
+  constexpr auto
+  GetThroughput(                           //
+      const StopWatch &sw) const noexcept  //
+      -> double
+  {
+    const auto exec_num = static_cast<double>(sw.GetExecNum());
+    const auto avg_sec = (static_cast<double>(sw.GetExecTime()) / thread_num_) / 1E9;
+    return exec_num / avg_sec;
+  }
+
+  /**
    * @brief Run a worker thread to measure throughput or latency.
    *
    * @param result_p A promise of a worker pointer that holds benchmarking results.
@@ -360,7 +384,7 @@ class Benchmarker
    */
   void
   RunWorker(  //
-      std::promise<Sketch> result_p,
+      std::promise<StopWatches> result_p,
       const size_t thread_id,
       const size_t rand_seed)
   {
@@ -368,15 +392,15 @@ class Benchmarker
     worker_cnt_.fetch_add(1, kRelaxed);
     while (!ready_for_benchmarking_.load(kRelaxed)) {
       // the preparation has finished, so wait other workers
-      std::this_thread::yield();
+      CPP_UTILITY_SPINLOCK_HINT
     }
 
     worker.Measure();
-    result_p.set_value(worker.MoveSketch());
+    result_p.set_value(worker.GetMeasurements());
 
     while (ready_for_benchmarking_.load(kRelaxed)) {
       // the measurement has finished, so wait the main thread
-      std::this_thread::sleep_for(std::chrono::microseconds{1});
+      std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
   }
 
@@ -387,18 +411,31 @@ class Benchmarker
    */
   void
   LogThroughput(  //
-      const Sketch &sketch) const
+      const StopWatches &stop_watches) const
   {
     if (output_as_csv_ && !measure_throughput_) return;
 
-    const size_t exec_num = sketch.GetTotalExecNum();
-    const size_t avg_nano_time = sketch.GetTotalExecTime() / thread_num_;
-    const double throughput = static_cast<double>(exec_num) / (avg_nano_time / 1E9);
+    Log("Throughput [OPS/s]:");
+    StopWatch total{};
+    for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
+      const auto &sw = stop_watches[op_id];
+      if (!sw) continue;
 
+      const auto throughput = GetThroughput(sw);
+      if (output_as_csv_) {
+        std::cout << op_id << "," << throughput << "\n";
+      } else {
+        std::cout << " OPS ID " << op_id << ": " << throughput << "\n";
+      }
+      total += sw;
+    }
+    if (!total) return;
+
+    const auto throughput = GetThroughput(total);
     if (output_as_csv_) {
-      std::cout << throughput << "\n";
+      std::cout << -1 << "," << throughput << "\n";
     } else {
-      std::cout << "Throughput [OPS/s]: " << throughput << "\n";
+      std::cout << " Total   : " << throughput << "\n";
     }
   }
 
@@ -409,19 +446,21 @@ class Benchmarker
    */
   void
   LogLatency(  //
-      const Sketch &sketch) const
+      const StopWatches &stop_watches) const
   {
     if (output_as_csv_ && measure_throughput_) return;
 
     Log("Percentile Latency [ns]:");
-    for (size_t id = 0; id < OperationEngine::OPType::kTotalNum; ++id) {
-      if (!sketch.HasLatency(id)) continue;
-      Log(" OPS ID " + std::to_string(id) + ":");
-      for (auto &&q : target_latency_) {
-        if (!output_as_csv_) {
-          std::printf("  %6.2f: %12lu\n", 100 * q, sketch.Quantile(id, q));  // NOLINT
+    for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
+      const auto &sw = stop_watches[op_id];
+      if (!sw) continue;
+
+      Log(" OPS ID " + std::to_string(op_id) + ":");
+      for (const auto &q : target_latency_) {
+        if (output_as_csv_) {
+          std::cout << op_id << "," << q << "," << sw.Quantile(q) << "\n";
         } else {
-          std::cout << id << "," << q << "," << sketch.Quantile(id, q) << "\n";
+          std::printf("  %6.2f: %12lu\n", 100 * q, sw.Quantile(q));  // NOLINT
         }
       }
     }

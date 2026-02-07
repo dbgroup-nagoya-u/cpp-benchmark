@@ -23,10 +23,8 @@
 #include <shared_mutex>
 
 // external libraries
+#include "dbgroup/benchmark/stop_watch.hpp"
 #include "gtest/gtest.h"
-
-// library headers
-#include "dbgroup/benchmark/component/stopwatch.hpp"
 
 // local sources
 #include "operation_engine.hpp"
@@ -74,15 +72,15 @@ class WorkerFixture : public ::testing::Test
     worker_->Measure();
     stopwatch_.Stop();
 
-    const auto &sketch = worker_->MoveSketch();
+    const auto sw = worker_->GetMeasurements()[0];
 
-    const auto wrapperred_exec_time = stopwatch_.GetNanoDuration();
-    EXPECT_GE(sketch.GetTotalExecTime(), 0);
-    EXPECT_LE(sketch.GetTotalExecTime(), wrapperred_exec_time);
+    const auto wrapperred_exec_time = stopwatch_.GetExecTime();
+    EXPECT_GE(sw.GetExecTime(), 0);
+    EXPECT_LE(sw.GetExecTime(), wrapperred_exec_time);
 
-    auto prev = sketch.Quantile(0, 0);
+    auto prev = sw.Quantile(0);
     for (size_t i = 1; i < 100; ++i) {  // NOLINT
-      auto cur = sketch.Quantile(0, i);
+      auto cur = sw.Quantile(static_cast<double>(i) / 100.0);
       EXPECT_LE(prev, cur);
       prev = cur;
     }
