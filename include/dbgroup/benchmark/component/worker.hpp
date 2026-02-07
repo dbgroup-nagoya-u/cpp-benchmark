@@ -113,8 +113,9 @@ class Worker
   /**
    * @return Measurement results.
    */
-  const auto
-  GetMeasurements() noexcept  //
+  [[nodiscard]]
+  constexpr auto
+  GetMeasurements() const noexcept  //
       -> std::array<StopWatch, OPType::kTotalNum>
   {
     return stop_watches_;

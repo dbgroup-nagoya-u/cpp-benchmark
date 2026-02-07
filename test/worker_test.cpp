@@ -72,7 +72,7 @@ class WorkerFixture : public ::testing::Test
     worker_->Measure();
     stopwatch_.Stop();
 
-    const auto &sw = worker_->GetMeasurements()[0];
+    const auto sw = worker_->GetMeasurements()[0];
 
     const auto wrapperred_exec_time = stopwatch_.GetExecTime();
     EXPECT_GE(sw.GetExecTime(), 0);
