@@ -22,8 +22,10 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdio>
+#include <format>
 #include <future>
 #include <iostream>
+#include <locale>
 #include <memory>
 #include <random>
 #include <string>
@@ -415,7 +417,17 @@ class Benchmarker
   LogThroughput(  //
       const StopWatches& stop_watches) const
   {
-    if (output_as_csv_ && !measure_throughput_) return;
+    constexpr auto* kOutFormat = "  {:10}: {:15.2Lf}\n";
+    constexpr auto* kCsvFormat = "Throughput,{},Avg,{}\n";
+
+    auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+      const auto throughput = GetThroughput(sw);
+      if (output_as_csv_) {
+        std::cout << std::format(kCsvFormat, type_name, throughput);
+      } else {
+        std::cout << std::format(std::locale(""), kOutFormat, type_name, throughput);
+      }
+    };
 
     Log("Throughput [OPS/s]:");
     StopWatch total{};
@@ -423,21 +435,12 @@ class Benchmarker
       const auto& sw = stop_watches[op_id];
       if (!sw) continue;
 
-      const auto throughput = GetThroughput(sw);
-      if (output_as_csv_) {
-        std::cout << op_id << "," << throughput << "\n";
-      } else {
-        std::cout << " OPS ID " << op_id << ": " << throughput << "\n";
-      }
+      const auto type_name = OperationEngine::EnumToString(static_cast<OPType>(op_id));
+      output(sw, type_name);
       total += sw;
     }
-    if (!total) return;
-
-    const auto throughput = GetThroughput(total);
-    if (output_as_csv_) {
-      std::cout << -1 << "," << throughput << "\n";
-    } else {
-      std::cout << " Total   : " << throughput << "\n";
+    if (total) {
+      output(total, "Total");
     }
   }
 
@@ -450,21 +453,33 @@ class Benchmarker
   LogLatency(  //
       const StopWatches& stop_watches) const
   {
-    if (output_as_csv_ && measure_throughput_) return;
+    constexpr auto* kOutFormat = "    {:6.2f}: {:15L}\n";
+    constexpr auto* kCsvFormat = "Latency,{},{},{}\n";
+    constexpr size_t kPercent = 100;
+
+    auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+      Log(std::format("  {}:", type_name));
+      for (const auto& q : target_latency_) {
+        if (output_as_csv_) {
+          std::cout << std::format(kCsvFormat, type_name, q, sw.Quantile(q));
+        } else {
+          std::cout << std::format(std::locale(""), kOutFormat, kPercent * q, sw.Quantile(q));
+        }
+      }
+    };
 
     Log("Percentile Latency [ns]:");
+    StopWatch total{};
     for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
       const auto& sw = stop_watches[op_id];
       if (!sw) continue;
 
-      Log(" OPS ID " + std::to_string(op_id) + ":");
-      for (const auto& q : target_latency_) {
-        if (output_as_csv_) {
-          std::cout << op_id << "," << q << "," << sw.Quantile(q) << "\n";
-        } else {
-          std::printf("  %6.2f: %12lu\n", 100 * q, sw.Quantile(q));  // NOLINT
-        }
-      }
+      const auto type_name = OperationEngine::EnumToString(static_cast<OPType>(op_id));
+      output(sw, type_name);
+      total += sw;
+    }
+    if (total) {
+      output(total, "Total");
     }
   }
 

@@ -21,6 +21,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <random>
+#include <stdexcept>
+#include <string_view>
 #include <utility>
 
 // external C++ libraries
@@ -169,6 +171,26 @@ class OperationEngine
   /*##########################################################################*
    * Public APIs
    *##########################################################################*/
+
+  /**
+   * @param e A random seed.
+   * @return The type name for output.
+   * @note Our benchmark template requires this function.
+   */
+  static constexpr auto
+  EnumToString(        //
+      const OPType e)  //
+      -> std::string_view
+  {
+    switch (e) {
+      case kRead:
+        return "Read";
+      case kWrite:
+        return "Write";
+      default:
+        throw std::runtime_error{"Found the unkown operation type."};
+    }
+  }
 
   /**
    * @brief Get the Operation Iter object
