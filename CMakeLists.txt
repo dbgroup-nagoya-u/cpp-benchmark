@@ -8,7 +8,7 @@ endif()
 # project information
 project(
   cpp_bench
-  VERSION "2.2.0"
+  VERSION "2.3.0"
   DESCRIPTION "A benchmarker library for C++ language."
   LANGUAGES "CXX"
 )
