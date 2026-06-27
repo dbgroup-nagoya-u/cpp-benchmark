@@ -84,15 +84,16 @@ class OperationEngine
      */
     explicit OPIter(  //
         const size_t rand_seed)
-        : rand_{rand_seed}, pos_{zipf_(rand_)}
+        : rand_{rand_seed}
+        , pos_{zipf_(rand_)}
     {
     }
 
-    OPIter(const OPIter &) = delete;
-    OPIter(OPIter &&) noexcept = default;
+    OPIter(const OPIter&) = delete;
+    OPIter(OPIter&&) noexcept = default;
 
-    auto operator=(const OPIter &obj) -> OPIter & = delete;
-    auto operator=(OPIter &&) noexcept -> OPIter & = default;
+    auto operator=(const OPIter& obj) -> OPIter& = delete;
+    auto operator=(OPIter&&) noexcept -> OPIter& = default;
 
     /*########################################################################*
      * Public destructor
@@ -135,7 +136,7 @@ class OperationEngine
      */
     auto
     operator++()  //
-        -> OPIter &
+        -> OPIter&
     {
       type_ = static_cast<OPType>(static_cast<uint32_t>(type_) ^ 1U);
       pos_ = zipf_(rand_);

@@ -38,7 +38,7 @@ Target<std::shared_mutex>::Execute(  //
     uint32_t pos)  //
     -> size_t
 {
-  auto &page = pages_[pos];
+  auto& page = pages_[pos];
 
   if (type == OPType::kRead) {
     [[maybe_unused]] const std::shared_lock guard{page.lock};
@@ -63,16 +63,16 @@ Target<BackOffLock>::Execute(  //
     uint32_t pos)  //
     -> size_t
 {
-  auto &page = pages_[pos];
+  auto& page = pages_[pos];
 
   if (type == OPType::kRead) {
-    [[maybe_unused]] const auto &guard = page.lock.LockS();
+    [[maybe_unused]] const auto& guard = page.lock.LockS();
     [[maybe_unused]] size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
   } else {  // kWrite
-    [[maybe_unused]] const auto &guard = page.lock.LockX();
+    [[maybe_unused]] const auto& guard = page.lock.LockX();
     for (size_t i = 0; i < kElementNum; ++i) {
       ++(page.values[i]);
     }
@@ -88,16 +88,16 @@ Target<MCSLock>::Execute(  //
     uint32_t pos)  //
     -> size_t
 {
-  auto &page = pages_[pos];
+  auto& page = pages_[pos];
 
   if (type == OPType::kRead) {
-    [[maybe_unused]] const auto &guard = page.lock.LockS();
+    [[maybe_unused]] const auto& guard = page.lock.LockS();
     [[maybe_unused]] size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
   } else {  // kWrite
-    [[maybe_unused]] const auto &guard = page.lock.LockX();
+    [[maybe_unused]] const auto& guard = page.lock.LockX();
     for (size_t i = 0; i < kElementNum; ++i) {
       ++(page.values[i]);
     }
@@ -113,10 +113,10 @@ Target<OptimisticLock>::Execute(  //
     uint32_t pos)  //
     -> size_t
 {
-  auto &page = pages_[pos];
+  auto& page = pages_[pos];
 
   if (type == OPType::kRead) {
-    auto &&guard = page.lock.GetVersion();
+    auto&& guard = page.lock.GetVersion();
     do {
       [[maybe_unused]] size_t sum = 0;
       for (size_t i = 0; i < kElementNum; ++i) {
@@ -124,7 +124,7 @@ Target<OptimisticLock>::Execute(  //
       }
     } while (!guard.VerifyVersion());
   } else {  // kWrite
-    [[maybe_unused]] const auto &guard = page.lock.LockX();
+    [[maybe_unused]] const auto& guard = page.lock.LockX();
     for (size_t i = 0; i < kElementNum; ++i) {
       ++(page.values[i]);
     }

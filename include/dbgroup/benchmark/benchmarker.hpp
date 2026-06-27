@@ -76,18 +76,20 @@ class Benchmarker
      * @param op_engine A reference to a operation generator.
      */
     Builder(  //
-        Target &target,
+        Target& target,
         std::string target_name,  // NOLINT
-        OperationEngine &op_engine)
-        : target_{target}, target_name_{std::move(target_name)}, op_engine_{op_engine}
+        OperationEngine& op_engine)
+        : target_{target}
+        , target_name_{std::move(target_name)}
+        , op_engine_{op_engine}
     {
     }
 
-    Builder(const Builder &) = delete;
-    Builder(Builder &&) = delete;
+    Builder(const Builder&) = delete;
+    Builder(Builder&&) = delete;
 
-    auto operator=(const Builder &obj) -> Builder & = delete;
-    auto operator=(Builder &&) -> Builder & = delete;
+    auto operator=(const Builder& obj) -> Builder& = delete;
+    auto operator=(Builder&&) -> Builder& = delete;
 
     /*########################################################################*
      * Public destructors
@@ -119,7 +121,7 @@ class Benchmarker
     constexpr auto
     SetThreadNum(                 //
         const size_t thread_num)  //
-        -> Builder &
+        -> Builder&
     {
       thread_num_ = thread_num;
       return *this;
@@ -132,7 +134,7 @@ class Benchmarker
     constexpr auto
     SetTargetLatency(                        //
         std::vector<double> target_latency)  //
-        -> Builder &
+        -> Builder&
     {
       target_latency_ = std::move(target_latency);
       return *this;
@@ -145,7 +147,7 @@ class Benchmarker
     constexpr auto
     SetTimeOut(                       //
         const size_t timeout_in_sec)  //
-        -> Builder &
+        -> Builder&
     {
       timeout_in_sec_ = timeout_in_sec;
       return *this;
@@ -158,7 +160,7 @@ class Benchmarker
     constexpr auto
     SetRandomSeed(               //
         const size_t rand_seed)  //
-        -> Builder &
+        -> Builder&
     {
       rand_seed_ = rand_seed;
       return *this;
@@ -171,7 +173,7 @@ class Benchmarker
     constexpr auto
     OutputAsCSV(                        //
         const bool measure_throughput)  //
-        -> Builder &
+        -> Builder&
     {
       output_as_csv_ = true;
       measure_throughput_ = measure_throughput;
@@ -184,13 +186,13 @@ class Benchmarker
      *########################################################################*/
 
     /// @brief A benchmark target.
-    Target &target_{};
+    Target& target_{};
 
     /// @brief The name of a benchmarking target.
     std::string target_name_{};
 
     /// @brief An target operation generator.
-    OperationEngine &op_engine_{};
+    OperationEngine& op_engine_{};
 
     /// @brief The number of worker threads.
     size_t thread_num_{1};
@@ -215,11 +217,11 @@ class Benchmarker
    * Public constructors and assignment operators
    *##########################################################################*/
 
-  Benchmarker(const Benchmarker &) = delete;
-  Benchmarker(Benchmarker &&) = delete;
+  Benchmarker(const Benchmarker&) = delete;
+  Benchmarker(Benchmarker&&) = delete;
 
-  auto operator=(const Benchmarker &obj) -> Benchmarker & = delete;
-  auto operator=(Benchmarker &&) -> Benchmarker & = delete;
+  auto operator=(const Benchmarker& obj) -> Benchmarker& = delete;
+  auto operator=(Benchmarker&&) -> Benchmarker& = delete;
 
   /*##########################################################################*
    * Public destructors
@@ -273,9 +275,9 @@ class Benchmarker
 
     Log("...Run workers.");
     ready_for_benchmarking_.store(true, kRelaxed);
-    const auto &wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
+    const auto& wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
 
-    for (auto &&future : result_futures) {
+    for (auto&& future : result_futures) {
       const auto status = future.wait_until(wake_up);
       if (status != std::future_status::ready && is_running_.load(kRelaxed)) {
         Log("...Interrupting workers.");
@@ -291,7 +293,7 @@ class Benchmarker
      *------------------------------------------------------------------------*/
     Log("...Finish running.");
 
-    auto &&stop_watches = results[0];
+    auto&& stop_watches = results[0];
     for (size_t thd_id = 1; thd_id < thread_num_; ++thd_id) {
       for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
         stop_watches[op_id] += results[thd_id][op_id];
@@ -335,24 +337,24 @@ class Benchmarker
    * @param measure_throughput A flag for measuring throughput (true) or latency (false).
    */
   Benchmarker(  //
-      Target &target,
+      Target& target,
       std::string target_name,  // NOLINT
-      OperationEngine &op_engine,
+      OperationEngine& op_engine,
       const size_t thread_num,
       std::vector<double> target_latency,
       const size_t timeout_in_sec,
       const size_t rand_seed,
       const bool output_as_csv,
       const bool measure_throughput)
-      : target_{target},
-        target_name_{std::move(target_name)},
-        op_engine_{op_engine},
-        thread_num_{thread_num},
-        target_latency_{std::move(target_latency)},
-        rand_seed_{rand_seed},
-        timeout_in_sec_{timeout_in_sec},
-        output_as_csv_{output_as_csv},
-        measure_throughput_{measure_throughput}
+      : target_{target}
+      , target_name_{std::move(target_name)}
+      , op_engine_{op_engine}
+      , thread_num_{thread_num}
+      , target_latency_{std::move(target_latency)}
+      , rand_seed_{rand_seed}
+      , timeout_in_sec_{timeout_in_sec}
+      , output_as_csv_{output_as_csv}
+      , measure_throughput_{measure_throughput}
   {
   }
 
@@ -367,7 +369,7 @@ class Benchmarker
   [[nodiscard]]
   constexpr auto
   GetThroughput(                           //
-      const StopWatch &sw) const noexcept  //
+      const StopWatch& sw) const noexcept  //
       -> double
   {
     const auto exec_num = static_cast<double>(sw.GetExecNum());
@@ -411,14 +413,14 @@ class Benchmarker
    */
   void
   LogThroughput(  //
-      const StopWatches &stop_watches) const
+      const StopWatches& stop_watches) const
   {
     if (output_as_csv_ && !measure_throughput_) return;
 
     Log("Throughput [OPS/s]:");
     StopWatch total{};
     for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
-      const auto &sw = stop_watches[op_id];
+      const auto& sw = stop_watches[op_id];
       if (!sw) continue;
 
       const auto throughput = GetThroughput(sw);
@@ -446,17 +448,17 @@ class Benchmarker
    */
   void
   LogLatency(  //
-      const StopWatches &stop_watches) const
+      const StopWatches& stop_watches) const
   {
     if (output_as_csv_ && measure_throughput_) return;
 
     Log("Percentile Latency [ns]:");
     for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
-      const auto &sw = stop_watches[op_id];
+      const auto& sw = stop_watches[op_id];
       if (!sw) continue;
 
       Log(" OPS ID " + std::to_string(op_id) + ":");
-      for (const auto &q : target_latency_) {
+      for (const auto& q : target_latency_) {
         if (output_as_csv_) {
           std::cout << op_id << "," << q << "," << sw.Quantile(q) << "\n";
         } else {
@@ -473,7 +475,7 @@ class Benchmarker
    */
   void
   Log(  //
-      const std::string &message) const
+      const std::string& message) const
   {
     if (!output_as_csv_) {
       std::cout << message << "\n";
@@ -485,13 +487,13 @@ class Benchmarker
    *##########################################################################*/
 
   /// @brief A benchmark target.
-  Target &target_{};
+  Target& target_{};
 
   /// @brief The name of a benchmarking target.
   std::string target_name_{};
 
   /// @brief An target operation generator.
-  OperationEngine &op_engine_{};
+  OperationEngine& op_engine_{};
 
   /// @brief The number of worker threads.
   const size_t thread_num_{};
