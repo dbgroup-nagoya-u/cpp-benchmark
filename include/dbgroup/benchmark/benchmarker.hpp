@@ -20,10 +20,10 @@
 // C++ standard libraries
 #include <atomic>
 #include <chrono>
+#include <clocale>
 #include <cstddef>
 #include <cstdio>
 #include <future>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <random>
@@ -31,10 +31,12 @@
 #include <thread>
 #include <utility>
 #include <vector>
+// #include <format>
+// #include <locale>
 
-// external libraries
-#include "dbgroup/benchmark/stop_watch.hpp"
-#include "dbgroup/lock/utility.hpp"
+// external C++ libraries
+#include <dbgroup/benchmark/stop_watch.hpp>
+#include <dbgroup/lock/utility.hpp>
 
 // local sources
 #include "dbgroup/benchmark/component/worker.hpp"
@@ -77,18 +79,20 @@ class Benchmarker
      * @param op_engine A reference to a operation generator.
      */
     Builder(  //
-        Target &target,
+        Target& target,
         std::string target_name,  // NOLINT
-        OperationEngine &op_engine)
-        : target_{target}, target_name_{std::move(target_name)}, op_engine_{op_engine}
+        OperationEngine& op_engine)
+        : target_{target}
+        , target_name_{std::move(target_name)}
+        , op_engine_{op_engine}
     {
     }
 
-    Builder(const Builder &) = delete;
-    Builder(Builder &&) = delete;
+    Builder(const Builder&) = delete;
+    Builder(Builder&&) = delete;
 
-    auto operator=(const Builder &obj) -> Builder & = delete;
-    auto operator=(Builder &&) -> Builder & = delete;
+    auto operator=(const Builder& obj) -> Builder& = delete;
+    auto operator=(Builder&&) -> Builder& = delete;
 
     /*########################################################################*
      * Public destructors
@@ -103,13 +107,14 @@ class Benchmarker
     /**
      * @return A benchmarker.
      */
-    [[nodiscard]] auto
+    [[nodiscard]]
+    auto
     Build() const  //
         -> std::unique_ptr<Benchmarker>
     {
       return std::unique_ptr<Benchmarker>{
           new Benchmarker{target_, target_name_, op_engine_, thread_num_, target_latency_,
-                          timeout_in_sec_, rand_seed_, output_as_csv_, measure_throughput_}};
+                          timeout_in_sec_, rand_seed_, output_as_csv_}};
     }
 
     /**
@@ -119,7 +124,7 @@ class Benchmarker
     constexpr auto
     SetThreadNum(                 //
         const size_t thread_num)  //
-        -> Builder &
+        -> Builder&
     {
       thread_num_ = thread_num;
       return *this;
@@ -132,7 +137,7 @@ class Benchmarker
     constexpr auto
     SetTargetLatency(                        //
         std::vector<double> target_latency)  //
-        -> Builder &
+        -> Builder&
     {
       target_latency_ = std::move(target_latency);
       return *this;
@@ -145,7 +150,7 @@ class Benchmarker
     constexpr auto
     SetTimeOut(                       //
         const size_t timeout_in_sec)  //
-        -> Builder &
+        -> Builder&
     {
       timeout_in_sec_ = timeout_in_sec;
       return *this;
@@ -158,23 +163,20 @@ class Benchmarker
     constexpr auto
     SetRandomSeed(               //
         const size_t rand_seed)  //
-        -> Builder &
+        -> Builder&
     {
       rand_seed_ = rand_seed;
       return *this;
     }
 
     /**
-     * @param measure_throughput A flag for measuring throughput (true) or latency (false).
      * @return Oneself.
      */
     constexpr auto
-    OutputAsCSV(                        //
-        const bool measure_throughput)  //
-        -> Builder &
+    OutputAsCSV()  //
+        -> Builder&
     {
       output_as_csv_ = true;
-      measure_throughput_ = measure_throughput;
       return *this;
     }
 
@@ -184,13 +186,13 @@ class Benchmarker
      *########################################################################*/
 
     /// @brief A benchmark target.
-    Target &target_{};
+    Target& target_{};
 
     /// @brief The name of a benchmarking target.
     std::string target_name_{};
 
     /// @brief An target operation generator.
-    OperationEngine &op_engine_{};
+    OperationEngine& op_engine_{};
 
     /// @brief The number of worker threads.
     size_t thread_num_{1};
@@ -206,20 +208,17 @@ class Benchmarker
 
     /// @brief A flat to output measured results as CSV or TXT.
     bool output_as_csv_{false};
-
-    /// @brief A flag to measure throughput (if true) or latency (if false).
-    bool measure_throughput_{true};
   };
 
   /*##########################################################################*
    * Public constructors and assignment operators
    *##########################################################################*/
 
-  Benchmarker(const Benchmarker &) = delete;
-  Benchmarker(Benchmarker &&) = delete;
+  Benchmarker(const Benchmarker&) = delete;
+  Benchmarker(Benchmarker&&) = delete;
 
-  auto operator=(const Benchmarker &obj) -> Benchmarker & = delete;
-  auto operator=(Benchmarker &&) -> Benchmarker & = delete;
+  auto operator=(const Benchmarker& obj) -> Benchmarker& = delete;
+  auto operator=(Benchmarker&&) -> Benchmarker& = delete;
 
   /*##########################################################################*
    * Public destructors
@@ -273,9 +272,9 @@ class Benchmarker
 
     Log("...Run workers.");
     ready_for_benchmarking_.store(true, kRelaxed);
-    const auto &wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
+    const auto& wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
 
-    for (auto &&future : result_futures) {
+    for (auto&& future : result_futures) {
       const auto status = future.wait_until(wake_up);
       if (status != std::future_status::ready && is_running_.load(kRelaxed)) {
         Log("...Interrupting workers.");
@@ -291,7 +290,7 @@ class Benchmarker
      *------------------------------------------------------------------------*/
     Log("...Finish running.");
 
-    auto &&stop_watches = results[0];
+    auto&& stop_watches = results[0];
     for (size_t thd_id = 1; thd_id < thread_num_; ++thd_id) {
       for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
         stop_watches[op_id] += results[thd_id][op_id];
@@ -332,27 +331,24 @@ class Benchmarker
    * @param timeout_in_sec Seconds to timeout.
    * @param rand_seed A base random seed.
    * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
-   * @param measure_throughput A flag for measuring throughput (true) or latency (false).
    */
   Benchmarker(  //
-      Target &target,
+      Target& target,
       std::string target_name,  // NOLINT
-      OperationEngine &op_engine,
+      OperationEngine& op_engine,
       const size_t thread_num,
       std::vector<double> target_latency,
       const size_t timeout_in_sec,
       const size_t rand_seed,
-      const bool output_as_csv,
-      const bool measure_throughput)
-      : target_{target},
-        target_name_{std::move(target_name)},
-        op_engine_{op_engine},
-        thread_num_{thread_num},
-        target_latency_{std::move(target_latency)},
-        rand_seed_{rand_seed},
-        timeout_in_sec_{timeout_in_sec},
-        output_as_csv_{output_as_csv},
-        measure_throughput_{measure_throughput}
+      const bool output_as_csv)
+      : target_{target}
+      , target_name_{std::move(target_name)}
+      , op_engine_{op_engine}
+      , thread_num_{thread_num}
+      , target_latency_{std::move(target_latency)}
+      , rand_seed_{rand_seed}
+      , timeout_in_sec_{timeout_in_sec}
+      , output_as_csv_{output_as_csv}
   {
   }
 
@@ -367,7 +363,7 @@ class Benchmarker
   [[nodiscard]]
   constexpr auto
   GetThroughput(                           //
-      const StopWatch &sw) const noexcept  //
+      const StopWatch& sw) const noexcept  //
       -> double
   {
     const auto exec_num = static_cast<double>(sw.GetExecNum());
@@ -411,31 +407,48 @@ class Benchmarker
    */
   void
   LogThroughput(  //
-      const StopWatches &stop_watches) const
+      const StopWatches& stop_watches) const
   {
-    if (output_as_csv_ && !measure_throughput_) return;
+    // constexpr auto* kOutFormat = "  {:10}: {:15.2Lf}\n";
+    // constexpr auto* kCsvFormat = "Throughput,{},Avg,{}\n";
+    // auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+    //   const auto throughput = GetThroughput(sw);
+    //   if (output_as_csv_) {
+    //     std::cout << std::format(kCsvFormat, type_name, throughput);
+    //   } else {
+    //     std::cout << std::format(std::locale(""), kOutFormat, type_name, throughput);
+    //   }
+    // };
+
+    // NOLINTBEGIN
+    constexpr auto* kOutFormat = "  %-10s: %'15.2f\n";
+    constexpr auto* kCsvFormat = "Throughput,%s,Avg,%f\n";
+    auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+      const auto throughput = GetThroughput(sw);
+      const std::string tn{type_name};
+      const auto* cstr = tn.c_str();
+      if (output_as_csv_) {
+        printf(kCsvFormat, cstr, throughput);
+      } else {
+        const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");
+        printf(kOutFormat, cstr, throughput);
+        setlocale(LC_ALL, orig_locale);
+      }
+    };
+    // NOLINTEND
 
     Log("Throughput [OPS/s]:");
     StopWatch total{};
     for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
-      const auto &sw = stop_watches[op_id];
+      const auto& sw = stop_watches[op_id];
       if (!sw) continue;
 
-      const auto throughput = GetThroughput(sw);
-      if (output_as_csv_) {
-        std::cout << op_id << "," << throughput << "\n";
-      } else {
-        std::cout << " OPS ID " << op_id << ": " << throughput << "\n";
-      }
+      const auto type_name = OperationEngine::EnumToString(static_cast<OPType>(op_id));
+      output(sw, type_name);
       total += sw;
     }
-    if (!total) return;
-
-    const auto throughput = GetThroughput(total);
-    if (output_as_csv_) {
-      std::cout << -1 << "," << throughput << "\n";
-    } else {
-      std::cout << " Total   : " << throughput << "\n";
+    if (total) {
+      output(total, "Total");
     }
   }
 
@@ -446,23 +459,53 @@ class Benchmarker
    */
   void
   LogLatency(  //
-      const StopWatches &stop_watches) const
+      const StopWatches& stop_watches) const
   {
-    if (output_as_csv_ && measure_throughput_) return;
+    constexpr size_t kPercent = 100;
 
-    Log("Percentile Latency [ns]:");
-    for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
-      const auto &sw = stop_watches[op_id];
-      if (!sw) continue;
+    // constexpr auto* kOutFormat = "    {:6.2f}: {:15L}\n";
+    // constexpr auto* kCsvFormat = "Latency,{},{},{}\n";
+    // auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+    //   Log(std::format("  {}:", type_name));
+    //   for (const auto& q : target_latency_) {
+    //     if (output_as_csv_) {
+    //       std::cout << std::format(kCsvFormat, type_name, q, sw.Quantile(q));
+    //     } else {
+    //       std::cout << std::format(std::locale(""), kOutFormat, kPercent * q, sw.Quantile(q));
+    //     }
+    //   }
+    // };
 
-      Log(" OPS ID " + std::to_string(op_id) + ":");
-      for (const auto &q : target_latency_) {
+    // NOLINTBEGIN
+    constexpr auto* kOutFormat = "    %6.2f: %'15ld\n";
+    constexpr auto* kCsvFormat = "Latency,%s,%g,%ld\n";
+    auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+      const std::string tn{type_name};
+      Log("  " + tn + ":");
+      for (const auto& q : target_latency_) {
         if (output_as_csv_) {
-          std::cout << op_id << "," << q << "," << sw.Quantile(q) << "\n";
+          printf(kCsvFormat, tn.c_str(), q, sw.Quantile(q));
         } else {
-          std::printf("  %6.2f: %12lu\n", 100 * q, sw.Quantile(q));  // NOLINT
+          const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");  // NOLINT
+          printf(kOutFormat, kPercent * q, sw.Quantile(q));
+          setlocale(LC_ALL, orig_locale);  // NOLINT
         }
       }
+    };
+    // NOLINTEND
+
+    Log("Percentile Latency [ns]:");
+    StopWatch total{};
+    for (size_t op_id = 0; op_id < OPType::kTotalNum; ++op_id) {
+      const auto& sw = stop_watches[op_id];
+      if (!sw) continue;
+
+      const auto type_name = OperationEngine::EnumToString(static_cast<OPType>(op_id));
+      output(sw, type_name);
+      total += sw;
+    }
+    if (total) {
+      output(total, "Total");
     }
   }
 
@@ -473,7 +516,7 @@ class Benchmarker
    */
   void
   Log(  //
-      const std::string &message) const
+      const std::string& message) const
   {
     if (!output_as_csv_) {
       std::cout << message << "\n";
@@ -485,13 +528,13 @@ class Benchmarker
    *##########################################################################*/
 
   /// @brief A benchmark target.
-  Target &target_{};
+  Target& target_{};
 
   /// @brief The name of a benchmarking target.
   std::string target_name_{};
 
   /// @brief An target operation generator.
-  OperationEngine &op_engine_{};
+  OperationEngine& op_engine_{};
 
   /// @brief The number of worker threads.
   const size_t thread_num_{};
@@ -516,9 +559,6 @@ class Benchmarker
 
   /// @brief A flat to output measured results as CSV or TXT.
   const bool output_as_csv_{};
-
-  /// @brief A flag to measure throughput (if true) or latency (if false).
-  const bool measure_throughput_{};
 };
 
 }  // namespace dbgroup::benchmark

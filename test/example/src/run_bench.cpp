@@ -17,9 +17,8 @@
 // C++ standard libraries
 #include <shared_mutex>
 
-// external libraries
-#include "dbgroup/benchmark/benchmarker.hpp"
-#include "dbgroup/benchmark/validator.hpp"
+// external C++ libraries
+#include <dbgroup/benchmark/benchmarker.hpp>
 
 // local sources
 #include "operation_engine.hpp"
@@ -28,7 +27,7 @@
 auto
 main(  //
     [[maybe_unused]] const int argc,
-    [[maybe_unused]] const char *argv[])  //
+    [[maybe_unused]] const char* const argv[])  //
     -> int
 {
   using Target = ::dbgroup::example::Target<std::shared_mutex>;
@@ -44,7 +43,7 @@ main(  //
   // builder.SetTimeOut(...);
   // builder.SetRandomSeed(...);
   // builder.OutputAsCSV(...);
-  auto &&bench = builder.Build();
+  auto&& bench = builder.Build();
   bench->Run();
 
   return 0;

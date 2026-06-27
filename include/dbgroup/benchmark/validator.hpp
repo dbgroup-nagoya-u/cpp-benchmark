@@ -22,9 +22,8 @@
 #include <stdexcept>
 #include <string>
 
-// external libraries
-#include "dbgroup/constants.hpp"
-#include "dbgroup/thread/id_manager.hpp"
+// external C++ libraries
+#include <dbgroup/thread/id_manager.hpp>
 
 namespace dbgroup::benchmark
 {
@@ -35,7 +34,7 @@ namespace dbgroup::benchmark
 template <class Number>
 inline auto
 ValidatePositiveValue(  //
-    const char *flagname,
+    const char* const flagname,
     const Number value)  //
     -> bool
 {
@@ -47,7 +46,7 @@ ValidatePositiveValue(  //
 
 inline auto
 ValidateThreadNum(  //
-    [[maybe_unused]] const char *flagname,
+    [[maybe_unused]] const char* const flagname,
     const size_t thread_num)  //
     -> bool
 {
@@ -60,7 +59,7 @@ ValidateThreadNum(  //
 
 inline auto
 ValidateSkewParameter(  //
-    [[maybe_unused]] const char *flagname,
+    [[maybe_unused]] const char* const flagname,
     const double skew)  //
     -> bool
 {
@@ -72,7 +71,7 @@ ValidateSkewParameter(  //
 
 inline auto
 ValidateProbability(  //
-    [[maybe_unused]] const char *flagname,
+    [[maybe_unused]] const char* const flagname,
     const double prob)  //
     -> bool
 {
@@ -84,15 +83,15 @@ ValidateProbability(  //
 
 inline auto
 ValidateStr2UInt(  //
-    [[maybe_unused]] const char *flagname,
-    const std::string &str)  //
+    [[maybe_unused]] const char* const flagname,
+    const std::string& str)  //
     -> bool
 {
   if (str.empty()) return true;
 
   try {
     std::stoul(str);
-  } catch (const std::invalid_argument &) {
+  } catch (const std::invalid_argument&) {
     std::cerr << "ERROR: A string must be unsigned integers\n";
     return false;
   }

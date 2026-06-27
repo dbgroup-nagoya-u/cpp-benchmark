@@ -18,12 +18,9 @@
 #define CPP_UTILITY_DBGROUP_BENCHMARK_UTILITY_HPP_
 
 // C++ standard libraries
-#include <atomic>
-#include <chrono>
 #include <concepts>
 #include <cstddef>
-#include <functional>
-#include <thread>
+#include <utility>
 
 namespace dbgroup::benchmark
 {
@@ -37,7 +34,7 @@ namespace dbgroup::benchmark
  * @tparam T A target class.
  */
 template <class T>
-concept OPTypeEnum = requires(T &x) {
+concept OPTypeEnum = requires(T& x) {
   // public types
   requires T::kTotalNum > 0;
 };
@@ -49,11 +46,11 @@ concept OPTypeEnum = requires(T &x) {
  * @tparam OPType A class for representing operation iterators.
  */
 template <class T, class OPType, class Operation>
-concept OPIterClass = requires(T &x) {
+concept OPIterClass = requires(T& x) {
   // public APIs
   { static_cast<bool>(x) } -> std::convertible_to<bool>;
   { *x } -> std::convertible_to<std::pair<OPType, Operation>>;
-  { ++x } -> std::convertible_to<T &>;
+  { ++x } -> std::convertible_to<T&>;
 };
 
 /**
@@ -62,7 +59,7 @@ concept OPIterClass = requires(T &x) {
  * @tparam T A target class.
  */
 template <class T>
-concept OPEngineClass = requires(T &x, size_t thread_id, size_t rand_seed) {
+concept OPEngineClass = requires(T& x, size_t thread_id, size_t rand_seed) {
   // public types
   requires OPTypeEnum<typename T::OPType>;
   typename T::Operation;
@@ -78,7 +75,7 @@ concept OPEngineClass = requires(T &x, size_t thread_id, size_t rand_seed) {
  * @tparam T A target class.
  */
 template <class T>
-concept TargetClass = requires(T &x, typename T::OPType type, typename T::Operation ops) {
+concept TargetClass = requires(T& x, typename T::OPType type, typename T::Operation ops) {
   // public types
   requires OPTypeEnum<typename T::OPType>;
   typename T::Operation;

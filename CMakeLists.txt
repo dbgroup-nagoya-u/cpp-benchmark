@@ -8,7 +8,7 @@ endif()
 # project information
 project(
   cpp_bench
-  VERSION "2.2.0"
+  VERSION "2.3.0"
   DESCRIPTION "A benchmarker library for C++ language."
   LANGUAGES "CXX"
 )
@@ -27,8 +27,8 @@ if(NOT TARGET dbgroup::${PROJECT_NAME})
   # use our utility
   FetchContent_Declare(
     cpp-utility
-    GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility.git"
-    GIT_TAG "4d0e2367eb21f7495e0433dc36766a316d49ce41" # 0.15.0
+    GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/cpp-utility"
+    GIT_TAG "1b790bf1a89cf29b5d759e4dd84ce814e727b06d" # 0.17.1
   )
   FetchContent_MakeAvailable(cpp-utility)
 

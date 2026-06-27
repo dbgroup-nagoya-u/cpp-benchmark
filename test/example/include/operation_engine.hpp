@@ -21,10 +21,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <random>
+#include <stdexcept>
+#include <string_view>
 #include <utility>
 
-// external libraries
-#include "dbgroup/random/zipf.hpp"
+// external C++ libraries
+#include <dbgroup/random/zipf.hpp>
 
 // local sources
 #include "constants.hpp"
@@ -84,15 +86,16 @@ class OperationEngine
      */
     explicit OPIter(  //
         const size_t rand_seed)
-        : rand_{rand_seed}, pos_{zipf_(rand_)}
+        : rand_{rand_seed}
+        , pos_{zipf_(rand_)}
     {
     }
 
-    OPIter(const OPIter &) = delete;
-    OPIter(OPIter &&) noexcept = default;
+    OPIter(const OPIter&) = delete;
+    OPIter(OPIter&&) noexcept = default;
 
-    auto operator=(const OPIter &obj) -> OPIter & = delete;
-    auto operator=(OPIter &&) noexcept -> OPIter & = default;
+    auto operator=(const OPIter& obj) -> OPIter& = delete;
+    auto operator=(OPIter&&) noexcept -> OPIter& = default;
 
     /*########################################################################*
      * Public destructor
@@ -135,7 +138,7 @@ class OperationEngine
      */
     auto
     operator++()  //
-        -> OPIter &
+        -> OPIter&
     {
       type_ = static_cast<OPType>(static_cast<uint32_t>(type_) ^ 1U);
       pos_ = zipf_(rand_);
@@ -170,6 +173,26 @@ class OperationEngine
    *##########################################################################*/
 
   /**
+   * @param e A random seed.
+   * @return The type name for output.
+   * @note Our benchmark template requires this function.
+   */
+  static constexpr auto
+  EnumToString(        //
+      const OPType e)  //
+      -> std::string_view
+  {
+    switch (e) {
+      case kRead:
+        return "Read";
+      case kWrite:
+        return "Write";
+      default:
+        throw std::runtime_error{"Found the unkown operation type."};
+    }
+  }
+
+  /**
    * @brief Get the Operation Iter object
    *
    * @param thread_id A unique thread ID.
@@ -178,7 +201,7 @@ class OperationEngine
    * @note Our benchmark template requires this function.
    */
   [[nodiscard]] auto
-  GetOPIter(  //
+  GetOPIter(  // NOLINT
       [[maybe_unused]] const size_t thread_id,
       const size_t rand_seed) const  //
       -> OPIter

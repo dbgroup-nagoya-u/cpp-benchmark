@@ -21,11 +21,10 @@
 #include <array>
 #include <atomic>
 #include <cstddef>
-#include <utility>
 
-// external libraries
-#include "dbgroup/benchmark/stop_watch.hpp"
-#include "dbgroup/constants.hpp"
+// external C++ libraries
+#include <dbgroup/benchmark/stop_watch.hpp>
+#include <dbgroup/constants.hpp>
 
 namespace dbgroup::benchmark::component
 {
@@ -60,25 +59,24 @@ class Worker
    * @param is_running A flag for monitoring benchmarker's status.
    */
   Worker(  //
-      Target &target,
-      OperationEngine &ops_engine,
-      const std::atomic_bool &is_running,
+      Target& target,
+      OperationEngine& ops_engine,
+      const std::atomic_bool& is_running,
       const size_t thread_id,
       const size_t rand_seed)
-      : is_running_{is_running},
-        target_{target},
-        op_engine_{ops_engine},
-        iter_{op_engine_.GetOPIter(thread_id, rand_seed)}
+      : is_running_{is_running}
+      , target_{target}
+      , op_engine_{ops_engine}
+      , iter_{op_engine_.GetOPIter(thread_id, rand_seed)}
   {
     target_.SetUpForWorker();
   }
 
-  Worker(Worker &&) noexcept = default;
-  auto operator=(Worker &&) noexcept -> Worker & = default;
-
-  // forbid copying
-  Worker(const Worker &) = delete;
-  auto operator=(const Worker &obj) -> Worker & = delete;
+  // forbid copying/moving
+  Worker(Worker&&) noexcept = delete;
+  Worker(const Worker&) = delete;
+  auto operator=(Worker&&) noexcept -> Worker& = delete;
+  auto operator=(const Worker& obj) -> Worker& = delete;
 
   /*##########################################################################*
    * Public destructors
@@ -102,8 +100,8 @@ class Worker
   Measure()
   {
     for (; iter_ && is_running_.load(kRelaxed); ++iter_) [[likely]] {
-      const auto &[type, op] = *iter_;
-      auto &sw = stop_watches_[type];
+      const auto& [type, op] = *iter_;
+      auto& sw = stop_watches_[type];
       sw.Start();
       const auto cnt = target_.Execute(type, op);
       sw.Stop(cnt);
@@ -127,13 +125,13 @@ class Worker
    *##########################################################################*/
 
   /// @brief A reference for monitoring a running state.
-  const std::atomic_bool &is_running_{};
+  const std::atomic_bool& is_running_{};
 
   /// @brief A benchmark target.
-  Target &target_{};
+  Target& target_{};
 
   /// @brief Operation data to be executed by this worker.
-  OperationEngine &op_engine_{};
+  OperationEngine& op_engine_{};
 
   /// @brief The iterator of an operation queue.
   OperationEngine::OPIter iter_{};
