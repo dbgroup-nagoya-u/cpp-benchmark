@@ -20,18 +20,19 @@
 // C++ standard libraries
 #include <atomic>
 #include <chrono>
+#include <clocale>
 #include <cstddef>
 #include <cstdio>
-#include <format>
 #include <future>
 #include <iostream>
-#include <locale>
 #include <memory>
 #include <random>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
+// #include <format>
+// #include <locale>
 
 // external C++ libraries
 #include <dbgroup/benchmark/stop_watch.hpp>
@@ -408,17 +409,33 @@ class Benchmarker
   LogThroughput(  //
       const StopWatches& stop_watches) const
   {
-    constexpr auto* kOutFormat = "  {:10}: {:15.2Lf}\n";
-    constexpr auto* kCsvFormat = "Throughput,{},Avg,{}\n";
+    // constexpr auto* kOutFormat = "  {:10}: {:15.2Lf}\n";
+    // constexpr auto* kCsvFormat = "Throughput,{},Avg,{}\n";
+    // auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+    //   const auto throughput = GetThroughput(sw);
+    //   if (output_as_csv_) {
+    //     std::cout << std::format(kCsvFormat, type_name, throughput);
+    //   } else {
+    //     std::cout << std::format(std::locale(""), kOutFormat, type_name, throughput);
+    //   }
+    // };
 
+    // NOLINTBEGIN
+    constexpr auto* kOutFormat = "  %-10s: %'15.2f\n";
+    constexpr auto* kCsvFormat = "Throughput,%s,Avg,%f\n";
     auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
       const auto throughput = GetThroughput(sw);
+      const std::string tn{type_name};
+      const auto* cstr = tn.c_str();
       if (output_as_csv_) {
-        std::cout << std::format(kCsvFormat, type_name, throughput);
+        printf(kCsvFormat, cstr, throughput);
       } else {
-        std::cout << std::format(std::locale(""), kOutFormat, type_name, throughput);
+        const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");
+        printf(kOutFormat, cstr, throughput);
+        setlocale(LC_ALL, orig_locale);
       }
     };
+    // NOLINTEND
 
     Log("Throughput [OPS/s]:");
     StopWatch total{};
@@ -444,20 +461,38 @@ class Benchmarker
   LogLatency(  //
       const StopWatches& stop_watches) const
   {
-    constexpr auto* kOutFormat = "    {:6.2f}: {:15L}\n";
-    constexpr auto* kCsvFormat = "Latency,{},{},{}\n";
     constexpr size_t kPercent = 100;
 
+    // constexpr auto* kOutFormat = "    {:6.2f}: {:15L}\n";
+    // constexpr auto* kCsvFormat = "Latency,{},{},{}\n";
+    // auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
+    //   Log(std::format("  {}:", type_name));
+    //   for (const auto& q : target_latency_) {
+    //     if (output_as_csv_) {
+    //       std::cout << std::format(kCsvFormat, type_name, q, sw.Quantile(q));
+    //     } else {
+    //       std::cout << std::format(std::locale(""), kOutFormat, kPercent * q, sw.Quantile(q));
+    //     }
+    //   }
+    // };
+
+    // NOLINTBEGIN
+    constexpr auto* kOutFormat = "    %6.2f: %'15ld\n";
+    constexpr auto* kCsvFormat = "Latency,%s,%g,%ld\n";
     auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
-      Log(std::format("  {}:", type_name));
+      const std::string tn{type_name};
+      Log("  " + tn + ":");
       for (const auto& q : target_latency_) {
         if (output_as_csv_) {
-          std::cout << std::format(kCsvFormat, type_name, q, sw.Quantile(q));
+          printf(kCsvFormat, tn.c_str(), q, sw.Quantile(q));
         } else {
-          std::cout << std::format(std::locale(""), kOutFormat, kPercent * q, sw.Quantile(q));
+          const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");  // NOLINT
+          printf(kOutFormat, kPercent * q, sw.Quantile(q));
+          setlocale(LC_ALL, orig_locale);  // NOLINT
         }
       }
     };
+    // NOLINTEND
 
     Log("Percentile Latency [ns]:");
     StopWatch total{};
