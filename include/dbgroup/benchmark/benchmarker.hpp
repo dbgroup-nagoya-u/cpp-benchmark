@@ -113,7 +113,7 @@ class Benchmarker
     {
       return std::unique_ptr<Benchmarker>{
           new Benchmarker{target_, target_name_, op_engine_, thread_num_, target_latency_,
-                          timeout_in_sec_, rand_seed_, output_as_csv_, measure_throughput_}};
+                          timeout_in_sec_, rand_seed_, output_as_csv_}};
     }
 
     /**
@@ -169,16 +169,13 @@ class Benchmarker
     }
 
     /**
-     * @param measure_throughput A flag for measuring throughput (true) or latency (false).
      * @return Oneself.
      */
     constexpr auto
-    OutputAsCSV(                        //
-        const bool measure_throughput)  //
+    OutputAsCSV()  //
         -> Builder&
     {
       output_as_csv_ = true;
-      measure_throughput_ = measure_throughput;
       return *this;
     }
 
@@ -210,9 +207,6 @@ class Benchmarker
 
     /// @brief A flat to output measured results as CSV or TXT.
     bool output_as_csv_{false};
-
-    /// @brief A flag to measure throughput (if true) or latency (if false).
-    bool measure_throughput_{true};
   };
 
   /*##########################################################################*
@@ -336,7 +330,6 @@ class Benchmarker
    * @param timeout_in_sec Seconds to timeout.
    * @param rand_seed A base random seed.
    * @param output_as_csv A flag to output benchmarking results as CSV or TEXT.
-   * @param measure_throughput A flag for measuring throughput (true) or latency (false).
    */
   Benchmarker(  //
       Target& target,
@@ -346,8 +339,7 @@ class Benchmarker
       std::vector<double> target_latency,
       const size_t timeout_in_sec,
       const size_t rand_seed,
-      const bool output_as_csv,
-      const bool measure_throughput)
+      const bool output_as_csv)
       : target_{target}
       , target_name_{std::move(target_name)}
       , op_engine_{op_engine}
@@ -356,7 +348,6 @@ class Benchmarker
       , rand_seed_{rand_seed}
       , timeout_in_sec_{timeout_in_sec}
       , output_as_csv_{output_as_csv}
-      , measure_throughput_{measure_throughput}
   {
   }
 
@@ -533,9 +524,6 @@ class Benchmarker
 
   /// @brief A flat to output measured results as CSV or TXT.
   const bool output_as_csv_{};
-
-  /// @brief A flag to measure throughput (if true) or latency (if false).
-  const bool measure_throughput_{};
 };
 
 }  // namespace dbgroup::benchmark
