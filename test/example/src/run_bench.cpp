@@ -17,9 +17,8 @@
 // C++ standard libraries
 #include <shared_mutex>
 
-// external libraries
-#include "dbgroup/benchmark/benchmarker.hpp"
-#include "dbgroup/benchmark/validator.hpp"
+// external C++ libraries
+#include <dbgroup/benchmark/benchmarker.hpp>
 
 // local sources
 #include "operation_engine.hpp"

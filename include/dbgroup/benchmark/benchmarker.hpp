@@ -23,7 +23,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <future>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <random>
@@ -32,9 +31,9 @@
 #include <utility>
 #include <vector>
 
-// external libraries
-#include "dbgroup/benchmark/stop_watch.hpp"
-#include "dbgroup/lock/utility.hpp"
+// external C++ libraries
+#include <dbgroup/benchmark/stop_watch.hpp>
+#include <dbgroup/lock/utility.hpp>
 
 // local sources
 #include "dbgroup/benchmark/component/worker.hpp"
@@ -103,7 +102,8 @@ class Benchmarker
     /**
      * @return A benchmarker.
      */
-    [[nodiscard]] auto
+    [[nodiscard]]
+    auto
     Build() const  //
         -> std::unique_ptr<Benchmarker>
     {

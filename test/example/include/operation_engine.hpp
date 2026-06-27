@@ -23,8 +23,8 @@
 #include <random>
 #include <utility>
 
-// external libraries
-#include "dbgroup/random/zipf.hpp"
+// external C++ libraries
+#include <dbgroup/random/zipf.hpp>
 
 // local sources
 #include "constants.hpp"
@@ -178,7 +178,7 @@ class OperationEngine
    * @note Our benchmark template requires this function.
    */
   [[nodiscard]] auto
-  GetOPIter(  //
+  GetOPIter(  // NOLINT
       [[maybe_unused]] const size_t thread_id,
       const size_t rand_seed) const  //
       -> OPIter

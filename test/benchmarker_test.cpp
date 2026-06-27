@@ -22,7 +22,7 @@
 #include <shared_mutex>
 
 // external sources
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 // local sources
 #include "operation_engine.hpp"

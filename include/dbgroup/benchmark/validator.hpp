@@ -22,9 +22,8 @@
 #include <stdexcept>
 #include <string>
 
-// external libraries
-#include "dbgroup/constants.hpp"
-#include "dbgroup/thread/id_manager.hpp"
+// external C++ libraries
+#include <dbgroup/thread/id_manager.hpp>
 
 namespace dbgroup::benchmark
 {

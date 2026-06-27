@@ -18,12 +18,9 @@
 #define CPP_UTILITY_DBGROUP_BENCHMARK_UTILITY_HPP_
 
 // C++ standard libraries
-#include <atomic>
-#include <chrono>
 #include <concepts>
 #include <cstddef>
-#include <functional>
-#include <thread>
+#include <utility>
 
 namespace dbgroup::benchmark
 {

@@ -23,8 +23,10 @@
 #include <shared_mutex>
 
 // external libraries
-#include "dbgroup/benchmark/stop_watch.hpp"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
+// external C++ libraries
+#include <dbgroup/benchmark/stop_watch.hpp>
 
 // local sources
 #include "operation_engine.hpp"

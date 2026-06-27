@@ -21,11 +21,10 @@
 #include <array>
 #include <atomic>
 #include <cstddef>
-#include <utility>
 
-// external libraries
-#include "dbgroup/benchmark/stop_watch.hpp"
-#include "dbgroup/constants.hpp"
+// external C++ libraries
+#include <dbgroup/benchmark/stop_watch.hpp>
+#include <dbgroup/constants.hpp>
 
 namespace dbgroup::benchmark::component
 {
@@ -73,11 +72,10 @@ class Worker
     target_.SetUpForWorker();
   }
 
-  Worker(Worker &&) noexcept = default;
-  auto operator=(Worker &&) noexcept -> Worker & = default;
-
-  // forbid copying
+  // forbid copying/moving
+  Worker(Worker &&) noexcept = delete;
   Worker(const Worker &) = delete;
+  auto operator=(Worker &&) noexcept -> Worker & = delete;
   auto operator=(const Worker &obj) -> Worker & = delete;
 
   /*##########################################################################*

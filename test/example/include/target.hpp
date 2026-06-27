@@ -21,10 +21,10 @@
 #include <cstddef>
 #include <cstdint>
 
-// external libraries
-#include "dbgroup/lock/mcs_lock.hpp"
-#include "dbgroup/lock/optimistic_lock.hpp"
-#include "dbgroup/lock/pessimistic_lock.hpp"
+// external C++ libraries
+#include <dbgroup/lock/mcs_lock.hpp>
+#include <dbgroup/lock/optimistic_lock.hpp>
+#include <dbgroup/lock/pessimistic_lock.hpp>
 
 // local sources
 #include "constants.hpp"
