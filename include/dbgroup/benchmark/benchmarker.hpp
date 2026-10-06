@@ -248,14 +248,15 @@ class Benchmarker
 
     std::vector<std::future<StopWatches>> result_futures{};
     result_futures.reserve(thread_num_);
+    std::vector<std::thread> workers{};
+    workers.reserve(thread_num_);
 
     // create workers in each thread
     std::mt19937_64 rand{rand_seed_};
     for (size_t thd_id = 0; thd_id < thread_num_; ++thd_id) {
       std::promise<StopWatches> res_p{};
       result_futures.emplace_back(res_p.get_future());
-      std::thread t{&Benchmarker::RunWorker, this, std::move(res_p), thd_id, rand()};
-      t.detach();
+      workers.emplace_back(&Benchmarker::RunWorker, this, std::move(res_p), thd_id, rand());
     }
     while (worker_cnt_.load(kRelaxed) < thread_num_) {
       // wait for all workers to be created
@@ -285,6 +286,9 @@ class Benchmarker
 
     target_.PostProcess();
     ready_for_benchmarking_.store(false, kRelaxed);
+    for (auto&& t : workers) {
+      t.join();
+    }
     /*------------------------------------------------------------------------*
      * Output benchmark results
      *------------------------------------------------------------------------*/
