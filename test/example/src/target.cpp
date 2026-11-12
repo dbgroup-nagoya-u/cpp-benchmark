@@ -148,7 +148,7 @@ Target<OptimisticLock>::Execute(  //
  * Explicit instantiation definitions
  *############################################################################*/
 
-template class Target<std::mutex>;
+template class Target<std::shared_mutex>;
 template class Target<BackOffLock>;
 template class Target<MCSLock>;
 template class Target<OptimisticLock>;

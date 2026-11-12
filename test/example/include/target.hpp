@@ -20,6 +20,7 @@
 // C++ standard libraries
 #include <cstddef>
 #include <cstdint>
+#include <shared_mutex>
 
 // external C++ libraries
 #include <dbgroup/lock/mcs_lock.hpp>
@@ -142,6 +143,43 @@ class Target
   /// @brief Target pages.
   Page pages_[kPageNum]{};
 };
+
+/*############################################################################*
+ * Explicit specialization declarations
+ *############################################################################*/
+
+template <>
+auto Target<std::shared_mutex>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+template <>
+auto Target<BackOffLock>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+template <>
+auto Target<MCSLock>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+template <>
+auto Target<OptimisticLock>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+/*############################################################################*
+ * Explicit instantiation declarations
+ *############################################################################*/
+
+extern template class Target<std::shared_mutex>;
+extern template class Target<BackOffLock>;
+extern template class Target<MCSLock>;
+extern template class Target<OptimisticLock>;
 
 }  // namespace dbgroup::example
 
