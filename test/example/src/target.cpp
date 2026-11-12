@@ -20,7 +20,11 @@
 // C++ standard libraries
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <shared_mutex>
+
+// external C++ libraries
+#include <dbgroup/benchmark/utility.hpp>
 
 // local sources
 #include "constants.hpp"
@@ -42,10 +46,11 @@ Target<std::shared_mutex>::Execute(  //
 
   if (type == OPType::kRead) {
     [[maybe_unused]] const std::shared_lock guard{page.lock};
-    [[maybe_unused]] size_t sum = 0;
+    size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
+    ::dbgroup::benchmark::DoNotOptimize(sum);
   } else {  // kWrite
     [[maybe_unused]] const std::lock_guard guard{page.lock};
     for (size_t i = 0; i < kElementNum; ++i) {
@@ -67,10 +72,11 @@ Target<BackOffLock>::Execute(  //
 
   if (type == OPType::kRead) {
     [[maybe_unused]] const auto& guard = page.lock.LockS();
-    [[maybe_unused]] size_t sum = 0;
+    size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
+    ::dbgroup::benchmark::DoNotOptimize(sum);
   } else {  // kWrite
     [[maybe_unused]] const auto& guard = page.lock.LockX();
     for (size_t i = 0; i < kElementNum; ++i) {
@@ -92,10 +98,11 @@ Target<MCSLock>::Execute(  //
 
   if (type == OPType::kRead) {
     [[maybe_unused]] const auto& guard = page.lock.LockS();
-    [[maybe_unused]] size_t sum = 0;
+    size_t sum = 0;
     for (size_t i = 0; i < kElementNum; ++i) {
       sum += page.values[i];
     }
+    ::dbgroup::benchmark::DoNotOptimize(sum);
   } else {  // kWrite
     [[maybe_unused]] const auto& guard = page.lock.LockX();
     for (size_t i = 0; i < kElementNum; ++i) {
@@ -118,10 +125,11 @@ Target<OptimisticLock>::Execute(  //
   if (type == OPType::kRead) {
     auto&& guard = page.lock.GetVersion();
     do {
-      [[maybe_unused]] size_t sum = 0;
+      size_t sum = 0;
       for (size_t i = 0; i < kElementNum; ++i) {
         sum += page.values[i];
       }
+      ::dbgroup::benchmark::DoNotOptimize(sum);
     } while (!guard.VerifyVersion());
   } else {  // kWrite
     [[maybe_unused]] const auto& guard = page.lock.LockX();

@@ -60,6 +60,18 @@ target_link_libraries(<target_bin_name> PRIVATE
 )
 ```
 
+### Preventing Compiler Optimizations
+
+Compilers may remove computations whose results are never used (e.g., the sum of read values in `Target::Execute`), and then benchmarks measure nothing. Pass such results to `dbgroup::benchmark::DoNotOptimize` (defined in `dbgroup/benchmark/utility.hpp`) to retain them. This function is based on `benchmark::DoNotOptimize` in [Google Benchmark](https://github.com/google/benchmark).
+
+```cpp
+size_t sum = 0;
+for (size_t i = 0; i < kElementNum; ++i) {
+  sum += page.values[i];
+}
+::dbgroup::benchmark::DoNotOptimize(sum);
+```
+
 ### Flowchart of User-defined Functions in RunBench
 
 ```mermaid
