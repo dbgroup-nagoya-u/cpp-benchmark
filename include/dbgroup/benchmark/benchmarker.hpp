@@ -27,6 +27,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <utility>
@@ -107,12 +108,16 @@ class Benchmarker
 
     /**
      * @return A benchmarker.
+     * @throws std::invalid_argument if the number of worker threads is zero.
      */
     [[nodiscard]]
     auto
     Build() const  //
         -> std::unique_ptr<Benchmarker>
     {
+      if (thread_num_ == 0) {
+        throw std::invalid_argument{"The number of worker threads must be positive."};
+      }
       return std::unique_ptr<Benchmarker>{
           new Benchmarker{target_, target_name_, op_engine_, thread_num_, target_latency_,
                           timeout_in_sec_, rand_seed_, output_as_csv_}};
@@ -274,7 +279,7 @@ class Benchmarker
 
     Log("...Run workers.");
     ready_for_benchmarking_.store(true, kRelease);
-    const auto& wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
+    const auto& wake_up = std::chrono::steady_clock::now() + timeout_in_sec_;
 
     for (auto&& future : result_futures) {
       const auto status = future.wait_until(wake_up);
@@ -432,12 +437,19 @@ class Benchmarker
       if (output_as_csv_) {
         printf(kCsvFormat, cstr, throughput);
       } else {
-        const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");
         printf(kOutFormat, cstr, throughput);
-        setlocale(LC_ALL, orig_locale);
       }
     };
     // NOLINTEND
+
+    // use thousands separators only for outputs in text
+    std::string orig_locale{};
+    if (!output_as_csv_) {
+      if (const auto* cur = setlocale(LC_NUMERIC, nullptr); cur != nullptr) {  // NOLINT
+        orig_locale = cur;
+      }
+      setlocale(LC_NUMERIC, "en_US.UTF-8");  // NOLINT
+    }
 
     Log("Throughput [OPS/s]:");
     StopWatch total{};
@@ -451,6 +463,10 @@ class Benchmarker
     }
     if (total) {
       output(total, "Total");
+    }
+
+    if (!orig_locale.empty()) {
+      setlocale(LC_NUMERIC, orig_locale.c_str());  // NOLINT
     }
   }
 
@@ -479,8 +495,8 @@ class Benchmarker
     // };
 
     // NOLINTBEGIN
-    constexpr auto* kOutFormat = "    %6.2f: %'15ld\n";
-    constexpr auto* kCsvFormat = "Latency,%s,%g,%ld\n";
+    constexpr auto* kOutFormat = "    %6.2f: %'15zu\n";
+    constexpr auto* kCsvFormat = "Latency,%s,%g,%zu\n";
     auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
       const std::string tn{type_name};
       Log("  " + tn + ":");
@@ -488,13 +504,20 @@ class Benchmarker
         if (output_as_csv_) {
           printf(kCsvFormat, tn.c_str(), q, sw.Quantile(q));
         } else {
-          const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");  // NOLINT
           printf(kOutFormat, kPercent * q, sw.Quantile(q));
-          setlocale(LC_ALL, orig_locale);  // NOLINT
         }
       }
     };
     // NOLINTEND
+
+    // use thousands separators only for outputs in text
+    std::string orig_locale{};
+    if (!output_as_csv_) {
+      if (const auto* cur = setlocale(LC_NUMERIC, nullptr); cur != nullptr) {  // NOLINT
+        orig_locale = cur;
+      }
+      setlocale(LC_NUMERIC, "en_US.UTF-8");  // NOLINT
+    }
 
     Log("Percentile Latency [ns]:");
     StopWatch total{};
@@ -508,6 +531,10 @@ class Benchmarker
     }
     if (total) {
       output(total, "Total");
+    }
+
+    if (!orig_locale.empty()) {
+      setlocale(LC_NUMERIC, orig_locale.c_str());  // NOLINT
     }
   }
 
