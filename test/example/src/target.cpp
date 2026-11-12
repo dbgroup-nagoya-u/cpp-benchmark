@@ -18,6 +18,7 @@
 #include "target.hpp"
 
 // C++ standard libraries
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
@@ -127,14 +128,16 @@ Target<OptimisticLock>::Execute(  //
     do {
       size_t sum = 0;
       for (size_t i = 0; i < kElementNum; ++i) {
-        sum += page.values[i];
+        const std::atomic_ref<uint64_t> ref{page.values[i]};
+        sum += ref.load(std::memory_order_relaxed);
       }
       ::dbgroup::benchmark::DoNotOptimize(sum);
     } while (!guard.VerifyVersion());
   } else {  // kWrite
     [[maybe_unused]] const auto& guard = page.lock.LockX();
     for (size_t i = 0; i < kElementNum; ++i) {
-      ++(page.values[i]);
+      const std::atomic_ref<uint64_t> ref{page.values[i]};
+      ref.store(ref.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
     }
   }
 
