@@ -36,6 +36,7 @@
 
 // external C++ libraries
 #include <dbgroup/benchmark/stop_watch.hpp>
+#include <dbgroup/constants.hpp>
 #include <dbgroup/lock/utility.hpp>
 
 // local sources
@@ -258,7 +259,7 @@ class Benchmarker
       result_futures.emplace_back(res_p.get_future());
       workers.emplace_back(&Benchmarker::RunWorker, this, std::move(res_p), thd_id, rand());
     }
-    while (worker_cnt_.load(kRelaxed) < thread_num_) {
+    while (worker_cnt_.load(kAcquire) < thread_num_) {
       // wait for all workers to be created
       std::this_thread::yield();
     }
@@ -272,7 +273,7 @@ class Benchmarker
     results.reserve(thread_num_);
 
     Log("...Run workers.");
-    ready_for_benchmarking_.store(true, kRelaxed);
+    ready_for_benchmarking_.store(true, kRelease);
     const auto& wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
 
     for (auto&& future : result_futures) {
@@ -285,7 +286,7 @@ class Benchmarker
     }
 
     target_.PostProcess();
-    ready_for_benchmarking_.store(false, kRelaxed);
+    ready_for_benchmarking_.store(false, kRelease);
     for (auto&& t : workers) {
       t.join();
     }
@@ -312,9 +313,6 @@ class Benchmarker
   /*##########################################################################*
    * Internal constants
    *##########################################################################*/
-
-  /// @brief The alias of `std::memory_order_relaxed`.
-  static constexpr auto kRelaxed = std::memory_order_relaxed;
 
   /// @brief Targets for calculating percentile latency.
   static constexpr auto kDefaultLatency  //
@@ -389,8 +387,8 @@ class Benchmarker
       const size_t rand_seed)
   {
     Worker worker{target_, op_engine_, is_running_, thread_id, rand_seed};
-    worker_cnt_.fetch_add(1, kRelaxed);
-    while (!ready_for_benchmarking_.load(kRelaxed)) {
+    worker_cnt_.fetch_add(1, kRelease);
+    while (!ready_for_benchmarking_.load(kAcquire)) {
       // the preparation has finished, so wait other workers
       CPP_UTILITY_SPINLOCK_HINT
     }
@@ -398,7 +396,7 @@ class Benchmarker
     worker.Measure();
     result_p.set_value(worker.GetMeasurements());
 
-    while (ready_for_benchmarking_.load(kRelaxed)) {
+    while (ready_for_benchmarking_.load(kAcquire)) {
       // the measurement has finished, so wait the main thread
       std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
