@@ -1,4 +1,49 @@
 #------------------------------------------------------------------------------#
+# Configure Sanitizers
+#------------------------------------------------------------------------------#
+
+set(
+  CPP_BENCH_TEST_SANITIZER
+  "none" CACHE STRING
+  "Sanitizers for unit tests and their dependencies (none, thread, or address)."
+)
+set_property(CACHE CPP_BENCH_TEST_SANITIZER PROPERTY STRINGS none thread address)
+
+if(CPP_BENCH_TEST_SANITIZER STREQUAL "thread")
+  set(DBGROUP_SANITIZER_FLAGS -fsanitize=thread)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    message(WARNING
+      "[cpp_bench] GCC's ThreadSanitizer may abort with \"unexpected memory mapping\" "
+      "under address space layout randomization. Use Clang 18 or later, or run "
+      "tests via \"setarch $(uname -m) -R\".")
+  endif()
+elseif(CPP_BENCH_TEST_SANITIZER STREQUAL "address")
+  # make UBSan errors fail unit tests
+  set(DBGROUP_SANITIZER_FLAGS
+    -fsanitize=address,undefined
+    -fno-sanitize-recover=undefined
+    -fno-omit-frame-pointer
+  )
+elseif(NOT CPP_BENCH_TEST_SANITIZER STREQUAL "none")
+  message(FATAL_ERROR
+    "[cpp_bench] CPP_BENCH_TEST_SANITIZER must be none, thread, or address.")
+endif()
+
+if(DBGROUP_SANITIZER_FLAGS)
+  # instrument test fixtures and libraries fetched/added below
+  add_compile_options(${DBGROUP_SANITIZER_FLAGS})
+  string(REPLACE ";" " " DBGROUP_SANITIZER_LINK_FLAGS "${DBGROUP_SANITIZER_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${DBGROUP_SANITIZER_LINK_FLAGS}")
+
+  # instrument our dependencies built in the parent directory
+  foreach(DBGROUP_DEP_TARGET cpp_utility)
+    if(TARGET ${DBGROUP_DEP_TARGET})
+      target_compile_options(${DBGROUP_DEP_TARGET} PRIVATE ${DBGROUP_SANITIZER_FLAGS})
+    endif()
+  endforeach()
+endif()
+
+#------------------------------------------------------------------------------#
 # Configure GoogleTest
 #------------------------------------------------------------------------------#
 
@@ -26,7 +71,7 @@ set(
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/example")
 
-  # define function to add unit tests in the same format
+# define function to add unit tests in the same format
 function(ADD_DBGROUP_TEST DBGROUP_TEST_TARGET)
   add_executable(${DBGROUP_TEST_TARGET}
     "${CMAKE_CURRENT_SOURCE_DIR}/${DBGROUP_TEST_TARGET}.cpp"
