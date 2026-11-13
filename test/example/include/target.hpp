@@ -119,6 +119,40 @@ class Target
   {
   }
 
+  /**
+   * @return The total number of executed write operations.
+   * @note This function is not thread-safe and is intended for unit tests.
+   */
+  [[nodiscard]]
+  auto
+  GetWriteNum() const  //
+      -> size_t
+  {
+    size_t sum = 0;
+    for (const auto& page : pages_) {
+      sum += page.values[0];
+    }
+    return sum;
+  }
+
+  /**
+   * @retval true if all the values in each page are the same.
+   * @retval false otherwise.
+   * @note This function is not thread-safe and is intended for unit tests.
+   */
+  [[nodiscard]]
+  auto
+  IsConsistent() const  //
+      -> bool
+  {
+    for (const auto& page : pages_) {
+      for (size_t i = 1; i < kElementNum; ++i) {
+        if (page.values[i] != page.values[0]) return false;
+      }
+    }
+    return true;
+  }
+
  private:
   /*##########################################################################*
    * Internal types

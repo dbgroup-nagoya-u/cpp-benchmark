@@ -29,6 +29,7 @@
 #include <dbgroup/benchmark/stop_watch.hpp>
 
 // local sources
+#include "constants.hpp"
 #include "operation_engine.hpp"
 #include "target.hpp"
 
@@ -70,16 +71,33 @@ class WorkerFixture : public ::testing::Test
   void
   VerifyMeasure()
   {
+    using ::dbgroup::example::kMaxExecNum;
+
     stopwatch_.Start();
     worker_->Measure();
     stopwatch_.Stop();
 
-    const auto sw = worker_->GetMeasurements()[0];
+    const auto sws = worker_->GetMeasurements();
+    const auto& read_sw = sws[OperationEngine::kRead];
+    const auto& write_sw = sws[OperationEngine::kWrite];
+    EXPECT_EQ(read_sw.GetExecNum(), (kMaxExecNum + 1) / 2);
+    EXPECT_EQ(write_sw.GetExecNum(), kMaxExecNum / 2);
+    EXPECT_EQ(target_.GetWriteNum(), kMaxExecNum / 2);
+    EXPECT_TRUE(target_.IsConsistent());
 
-    const auto wrapperred_exec_time = stopwatch_.GetExecTime();
-    EXPECT_GE(sw.GetExecTime(), 0);
-    EXPECT_LE(sw.GetExecTime(), wrapperred_exec_time);
+    const auto exec_time = read_sw.GetExecTime() + write_sw.GetExecTime();
+    EXPECT_GT(exec_time, 0);
+    EXPECT_LE(exec_time, stopwatch_.GetExecTime());
 
+    for (const auto& sw : sws) {
+      VerifyQuantiles(sw);
+    }
+  }
+
+  static void
+  VerifyQuantiles(  //
+      const StopWatch& sw)
+  {
     auto prev = sw.Quantile(0);
     for (size_t i = 1; i < 100; ++i) {  // NOLINT
       auto cur = sw.Quantile(static_cast<double>(i) / 100.0);
