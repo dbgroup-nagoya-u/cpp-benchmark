@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 // local sources
+#include "constants.hpp"
 #include "operation_engine.hpp"
 #include "target.hpp"
 
@@ -80,6 +81,9 @@ class BenchmarkerFixture : public ::testing::Test
 
     benchmarker_ = builder.Build();
     benchmarker_->Run();
+
+    EXPECT_EQ(target_.GetWriteNum(), thread_num * (::dbgroup::example::kMaxExecNum / 2));
+    EXPECT_TRUE(target_.IsConsistent());
   }
 
  private:

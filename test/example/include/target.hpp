@@ -20,6 +20,7 @@
 // C++ standard libraries
 #include <cstddef>
 #include <cstdint>
+#include <shared_mutex>
 
 // external C++ libraries
 #include <dbgroup/lock/mcs_lock.hpp>
@@ -118,6 +119,40 @@ class Target
   {
   }
 
+  /**
+   * @return The total number of executed write operations.
+   * @note This function is not thread-safe and is intended for unit tests.
+   */
+  [[nodiscard]]
+  auto
+  GetWriteNum() const  //
+      -> size_t
+  {
+    size_t sum = 0;
+    for (const auto& page : pages_) {
+      sum += page.values[0];
+    }
+    return sum;
+  }
+
+  /**
+   * @retval true if all the values in each page are the same.
+   * @retval false otherwise.
+   * @note This function is not thread-safe and is intended for unit tests.
+   */
+  [[nodiscard]]
+  auto
+  IsConsistent() const  //
+      -> bool
+  {
+    for (const auto& page : pages_) {
+      for (size_t i = 1; i < kElementNum; ++i) {
+        if (page.values[i] != page.values[0]) return false;
+      }
+    }
+    return true;
+  }
+
  private:
   /*##########################################################################*
    * Internal types
@@ -142,6 +177,43 @@ class Target
   /// @brief Target pages.
   Page pages_[kPageNum]{};
 };
+
+/*############################################################################*
+ * Explicit specialization declarations
+ *############################################################################*/
+
+template <>
+auto Target<std::shared_mutex>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+template <>
+auto Target<BackOffLock>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+template <>
+auto Target<MCSLock>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+template <>
+auto Target<OptimisticLock>::Execute(  //
+    OPType type,
+    uint32_t pos)  //
+    -> size_t;
+
+/*############################################################################*
+ * Explicit instantiation declarations
+ *############################################################################*/
+
+extern template class Target<std::shared_mutex>;
+extern template class Target<BackOffLock>;
+extern template class Target<MCSLock>;
+extern template class Target<OptimisticLock>;
 
 }  // namespace dbgroup::example
 

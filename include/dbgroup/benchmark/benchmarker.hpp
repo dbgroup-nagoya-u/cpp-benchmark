@@ -27,6 +27,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <utility>
@@ -36,6 +37,7 @@
 
 // external C++ libraries
 #include <dbgroup/benchmark/stop_watch.hpp>
+#include <dbgroup/constants.hpp>
 #include <dbgroup/lock/utility.hpp>
 
 // local sources
@@ -106,12 +108,16 @@ class Benchmarker
 
     /**
      * @return A benchmarker.
+     * @throws std::invalid_argument if the number of worker threads is zero.
      */
     [[nodiscard]]
     auto
     Build() const  //
         -> std::unique_ptr<Benchmarker>
     {
+      if (thread_num_ == 0) {
+        throw std::invalid_argument{"The number of worker threads must be positive."};
+      }
       return std::unique_ptr<Benchmarker>{
           new Benchmarker{target_, target_name_, op_engine_, thread_num_, target_latency_,
                           timeout_in_sec_, rand_seed_, output_as_csv_}};
@@ -258,7 +264,7 @@ class Benchmarker
       result_futures.emplace_back(res_p.get_future());
       workers.emplace_back(&Benchmarker::RunWorker, this, std::move(res_p), thd_id, rand());
     }
-    while (worker_cnt_.load(kRelaxed) < thread_num_) {
+    while (worker_cnt_.load(kAcquire) < thread_num_) {
       // wait for all workers to be created
       std::this_thread::yield();
     }
@@ -272,8 +278,8 @@ class Benchmarker
     results.reserve(thread_num_);
 
     Log("...Run workers.");
-    ready_for_benchmarking_.store(true, kRelaxed);
-    const auto& wake_up = std::chrono::high_resolution_clock::now() + timeout_in_sec_;
+    ready_for_benchmarking_.store(true, kRelease);
+    const auto& wake_up = std::chrono::steady_clock::now() + timeout_in_sec_;
 
     for (auto&& future : result_futures) {
       const auto status = future.wait_until(wake_up);
@@ -285,7 +291,7 @@ class Benchmarker
     }
 
     target_.PostProcess();
-    ready_for_benchmarking_.store(false, kRelaxed);
+    ready_for_benchmarking_.store(false, kRelease);
     for (auto&& t : workers) {
       t.join();
     }
@@ -312,9 +318,6 @@ class Benchmarker
   /*##########################################################################*
    * Internal constants
    *##########################################################################*/
-
-  /// @brief The alias of `std::memory_order_relaxed`.
-  static constexpr auto kRelaxed = std::memory_order_relaxed;
 
   /// @brief Targets for calculating percentile latency.
   static constexpr auto kDefaultLatency  //
@@ -389,8 +392,8 @@ class Benchmarker
       const size_t rand_seed)
   {
     Worker worker{target_, op_engine_, is_running_, thread_id, rand_seed};
-    worker_cnt_.fetch_add(1, kRelaxed);
-    while (!ready_for_benchmarking_.load(kRelaxed)) {
+    worker_cnt_.fetch_add(1, kRelease);
+    while (!ready_for_benchmarking_.load(kAcquire)) {
       // the preparation has finished, so wait other workers
       CPP_UTILITY_SPINLOCK_HINT
     }
@@ -398,7 +401,7 @@ class Benchmarker
     worker.Measure();
     result_p.set_value(worker.GetMeasurements());
 
-    while (ready_for_benchmarking_.load(kRelaxed)) {
+    while (ready_for_benchmarking_.load(kAcquire)) {
       // the measurement has finished, so wait the main thread
       std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
@@ -434,12 +437,19 @@ class Benchmarker
       if (output_as_csv_) {
         printf(kCsvFormat, cstr, throughput);
       } else {
-        const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");
         printf(kOutFormat, cstr, throughput);
-        setlocale(LC_ALL, orig_locale);
       }
     };
     // NOLINTEND
+
+    // use thousands separators only for outputs in text
+    std::string orig_locale{};
+    if (!output_as_csv_) {
+      if (const auto* cur = setlocale(LC_NUMERIC, nullptr); cur != nullptr) {  // NOLINT
+        orig_locale = cur;
+      }
+      setlocale(LC_NUMERIC, "en_US.UTF-8");  // NOLINT
+    }
 
     Log("Throughput [OPS/s]:");
     StopWatch total{};
@@ -453,6 +463,10 @@ class Benchmarker
     }
     if (total) {
       output(total, "Total");
+    }
+
+    if (!orig_locale.empty()) {
+      setlocale(LC_NUMERIC, orig_locale.c_str());  // NOLINT
     }
   }
 
@@ -481,8 +495,8 @@ class Benchmarker
     // };
 
     // NOLINTBEGIN
-    constexpr auto* kOutFormat = "    %6.2f: %'15ld\n";
-    constexpr auto* kCsvFormat = "Latency,%s,%g,%ld\n";
+    constexpr auto* kOutFormat = "    %6.2f: %'15zu\n";
+    constexpr auto* kCsvFormat = "Latency,%s,%g,%zu\n";
     auto output = [&](const StopWatch& sw, const std::string_view& type_name) {
       const std::string tn{type_name};
       Log("  " + tn + ":");
@@ -490,13 +504,20 @@ class Benchmarker
         if (output_as_csv_) {
           printf(kCsvFormat, tn.c_str(), q, sw.Quantile(q));
         } else {
-          const char* const orig_locale = setlocale(LC_ALL, "en_US.UTF-8");  // NOLINT
           printf(kOutFormat, kPercent * q, sw.Quantile(q));
-          setlocale(LC_ALL, orig_locale);  // NOLINT
         }
       }
     };
     // NOLINTEND
+
+    // use thousands separators only for outputs in text
+    std::string orig_locale{};
+    if (!output_as_csv_) {
+      if (const auto* cur = setlocale(LC_NUMERIC, nullptr); cur != nullptr) {  // NOLINT
+        orig_locale = cur;
+      }
+      setlocale(LC_NUMERIC, "en_US.UTF-8");  // NOLINT
+    }
 
     Log("Percentile Latency [ns]:");
     StopWatch total{};
@@ -510,6 +531,10 @@ class Benchmarker
     }
     if (total) {
       output(total, "Total");
+    }
+
+    if (!orig_locale.empty()) {
+      setlocale(LC_NUMERIC, orig_locale.c_str());  // NOLINT
     }
   }
 
